@@ -609,7 +609,38 @@
         });
         
         // Check if user is logged in
-        function checkLoginStatus() {
+        // טיפול בכפתור הכניסה
+document.getElementById('loginForm').addEventListener('submit', function(e) {
+  e.preventDefault();
+  
+  const username = document.getElementById('username').value;
+  const password = document.getElementById('password').value;
+
+  // הצגת טוען
+  const btn = this.querySelector('button[type="submit"]');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="animate-spin">⚙️</i> מתחבר...';
+
+  // שליחה לשרת
+  google.script.run
+    .withSuccessHandler(function(response) {
+      if (response.success) {
+        window.location.href = response.redirectUrl || '/';
+      } else {
+        alert(response.message || 'שגיאת התחברות');
+        btn.disabled = false;
+        btn.textContent = 'כניסה למערכת';
+      }
+    })
+    .withFailureHandler(function(error) {
+      console.error('Error:', error);
+      alert('שגיאה בחיבור לשרת');
+      btn.disabled = false;
+      btn.textContent = 'כניסה למערכת';
+    })
+    .validateUser({ username, password });
+});
+      function checkLoginStatus() {
             const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
             const loginScreen = document.getElementById('loginScreen');
             const appContainer = document.getElementById('appContainer');
