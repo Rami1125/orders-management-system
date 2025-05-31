@@ -151,24 +151,23 @@
             </div>
             
             <div class="space-y-4">
-                <div>
-                    <label class="block text-white mb-1">שם משתמש</label>
-                    <input id="username" type="text" class="w-full px-4 py-2 rounded-button border-none focus:ring-2 focus:ring-primary" placeholder="הזן שם משתמש">
-                </div>
-                
-                <div>
-                    <label class="block text-white mb-1">סיסמה</label>
-                    <input id="password" type="password" class="w-full px-4 py-2 rounded-button border-none focus:ring-2 focus:ring-primary" placeholder="הזן סיסמה">
-                </div>
-                
-                <button id="loginBtn" class="w-full py-3 bg-white text-primary font-bold rounded-button hover:bg-opacity-90 transition-all shadow-lg relative overflow-hidden">
-                    <span class="relative z-10">כניסה למערכת</span>
-                    <div class="absolute inset-0 shimmer opacity-30"></div>
-                </button>
-            </div>
-        </div>
+  <form id="loginForm" @submit.prevent="handleLogin">
+    <div>
+      <label for="username" class="block text-white mb-1">שם משתמש</label>
+      <input id="username" name="username" type="text" required
+             class="w-full px-4 py-2 rounded-lg border-none focus:ring-2 focus:ring-primary">
     </div>
-    
+    <div>
+      <label for="password" class="block text-white mb-1">סיסמה</label>
+      <input id="password" name="password" type="password" required
+             class="w-full px-4 py-2 rounded-lg border-none focus:ring-2 focus:ring-primary">
+    </div>
+    <button type="submit" 
+            class="w-full py-3 bg-white text-primary font-bold rounded-lg hover:bg-opacity-90 transition-all">
+      כניסה למערכת
+    </button>
+  </form>
+</div>
     <!-- Main Application -->
     <div id="appContainer" class="hidden">
         <!-- Top Navigation -->
