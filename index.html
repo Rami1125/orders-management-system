@@ -2,254 +2,570 @@
 <html lang="he" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>מערכת ניהול הזמנות ונהגים</title>
-    <link href="styles.css" rel="stylesheet" onerror="console.error('Failed to load styles.css'); this.style.display='none';">
+    <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Rubik:wght@300;400;500;600;700&display=swap');
+        
+        :root {
+            --primary: #3b82f6;
+            --primary-light: #93c5fd;
+            --secondary: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --dark: #1e293b;
+        }
+        
         body {
             font-family: 'Rubik', sans-serif;
-            background: linear-gradient(135deg, #e0e7ff, #c3dafe);
-            min-height: 100vh;
+            background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
         }
-        .glass {
-            background: rgba(255, 255, 255, 0.2);
-            backdrop-filter: blur(10px);
-            border-radius: 15px;
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+        
+        .glass-effect {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.18);
         }
-        .table-row:nth-child(even) {
-            background: rgba(255, 255, 255, 0.1);
+        
+        .neon-effect {
+            box-shadow: 0 0 10px rgba(59, 130, 246, 0.5), 
+                        0 0 20px rgba(59, 130, 246, 0.3);
         }
-        .table-row:hover {
-            background: rgba(255, 255, 255, 0.3);
-            transition: background 0.3s ease;
-        }
+        
         .modal {
             display: none;
-            animation: fadeIn 0.3s ease-in-out;
+            z-index: 1000;
         }
+        
         .modal.show {
             display: flex;
+            animation: fadeIn 0.3s ease-out;
         }
+        
         .loading {
             display: none;
             text-align: center;
             padding: 20px;
         }
+        
         .error {
-            color: #ef4444;
+            color: var(--danger);
             display: none;
             margin-bottom: 1rem;
+            text-align: center;
         }
-        table {
-            border-collapse: separate;
-            border-spacing: 0;
+        
+        .table-container {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
         }
-        th, td {
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            padding: 12px;
+        
+        .status-pending {
+            background-color: #fef3c7;
+            color: #d97706;
         }
-        @keyframes blink {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
+        
+        .status-in-progress {
+            background-color: #bfdbfe;
+            color: #1d4ed8;
         }
+        
+        .status-completed {
+            background-color: #d1fae5;
+            color: #047857;
+        }
+        
+        .status-cancelled {
+            background-color: #fee2e2;
+            color: #b91c1c;
+        }
+        
         .blink {
-            animation: blink 1.5s infinite;
+            animation: blink-animation 1.5s infinite;
         }
+        
+        @keyframes blink-animation {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+        
         @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
         }
-        @media (max-width: 640px) {
-            th, td {
-                padding: 8px;
-                font-size: 14px;
-            }
+        
+        .tab-content {
+            transition: all 0.3s ease;
+        }
+        
+        .separator {
+            border-top: 1px solid rgba(0, 0, 0, 0.1);
+            margin: 1rem 0;
+        }
+        
+        .time-slot {
+            position: relative;
+            height: 60px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        
+        .time-label {
+            position: absolute;
+            left: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 0.8rem;
+            color: #64748b;
+        }
+        
+        .order-card {
+            position: absolute;
+            width: calc(100% - 40px);
+            margin-right: 40px;
+            border-radius: 8px;
+            padding: 8px;
+            font-size: 0.85rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .order-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+        
+        .dropdown-menu {
+            display: none;
+            position: absolute;
+            background-color: white;
+            min-width: 160px;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+            z-index: 1;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .dropdown-menu.show {
+            display: block;
+            animation: fadeIn 0.2s;
+        }
+        
+        .dropdown-item {
+            padding: 10px 16px;
+            text-decoration: none;
+            display: block;
+            color: #334155;
+        }
+        
+        .dropdown-item:hover {
+            background-color: #f1f5f9;
+        }
+        
+        .phone-input {
+            font-family: monospace;
+            letter-spacing: 1px;
+        }
+        
+        .led-display {
+            background-color: #1e293b;
+            color: #00ff00;
+            font-family: 'Courier New', monospace;
+            padding: 10px;
+            border-radius: 5px;
+            text-align: center;
+            margin: 10px 0;
+            font-size: 1.2rem;
+        }
+        
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
             .container {
-                padding: 12px;
+                padding: 0.5rem;
             }
+            
+            th, td {
+                padding: 0.5rem;
+                font-size: 0.875rem;
+            }
+            
             .modal-content {
-                width: 90%;
+                width: 95%;
+                max-height: 90vh;
+                overflow-y: auto;
+            }
+            
+            .time-slot {
+                height: 40px;
+            }
+            
+            .order-card {
+                font-size: 0.7rem;
+                padding: 4px;
             }
         }
     </style>
-    <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;700&display=swap" rel="stylesheet">
 </head>
-<body>
-    <div class="container mx-auto p-6">
-        <h1 class="text-3xl font-bold mb-6 text-center text-indigo-800">מערכת ניהול הזמנות ונהגים</h1>
-
-        <!-- KPI Metrics -->
-        <div class="grid grid-cols-1 sm:grid-cols-4 gap-4 mb-6">
-            <div class="glass p-4 text-center">
-                <h3 class="text-lg font-semibold text-gray-800">סה"כ הזמנות</h3>
-                <p id="totalOrders" class="text-2xl font-bold text-indigo-600">0</p>
-            </div>
-            <div class="glass p-4 text-center">
-                <h3 class="text-lg font-semibold text-gray-800">ממתינות</h3>
-                <p id="pendingOrders" class="text-2xl font-bold text-yellow-600">0</p>
-            </div>
-            <div class="glass p-4 text-center">
-                <h3 class="text-lg font-semibold text-gray-800">בוצעו</h3>
-                <p id="completedOrders" class="text-2xl font-bold text-green-600">0</p>
-            </div>
-            <div class="glass p-4 text-center">
-                <h3 class="text-lg font-semibold text-gray-800">בוטלו</h3>
-                <p id="canceledOrders" class="text-2xl font-bold text-red-600">0</p>
+<body class="min-h-screen">
+    <div class="container mx-auto px-2 py-4">
+        <!-- Header with KPI -->
+        <div class="glass-effect p-4 mb-4">
+            <h1 class="text-2xl md:text-3xl font-bold text-center text-blue-800 mb-2">
+                <i class="fas fa-truck mr-2"></i>מערכת ניהול הזמנות ונהגים
+            </h1>
+            
+            <div class="flex flex-wrap justify-center gap-4 mb-4">
+                <div class="bg-white p-3 rounded-lg shadow-sm text-center min-w-[120px]">
+                    <div class="text-gray-500 text-sm">סה"כ הזמנות</div>
+                    <div id="totalOrders" class="text-xl font-bold text-blue-600">0</div>
+                </div>
+                
+                <div class="bg-white p-3 rounded-lg shadow-sm text-center min-w-[120px]">
+                    <div class="text-gray-500 text-sm">בהמתנה</div>
+                    <div id="pendingOrders" class="text-xl font-bold text-yellow-600">0</div>
+                </div>
+                
+                <div class="bg-white p-3 rounded-lg shadow-sm text-center min-w-[120px]">
+                    <div class="text-gray-500 text-sm">בביצוע</div>
+                    <div id="inProgressOrders" class="text-xl font-bold text-blue-500">0</div>
+                </div>
+                
+                <div class="bg-white p-3 rounded-lg shadow-sm text-center min-w-[120px]">
+                    <div class="text-gray-500 text-sm">הושלמו</div>
+                    <div id="completedOrders" class="text-xl font-bold text-green-600">0</div>
+                </div>
+                
+                <div class="bg-white p-3 rounded-lg shadow-sm text-center min-w-[120px]">
+                    <div class="text-gray-500 text-sm">בוטלו</div>
+                    <div id="cancelledOrders" class="text-xl font-bold text-red-600">0</div>
+                </div>
             </div>
         </div>
 
-        <!-- Search and Filters -->
-        <div class="flex flex-col sm:flex-row items-center mb-6 space-y-4 sm:space-y-0 sm:space-x-4 sm:space-x-reverse">
-            <input type="text" id="searchInput" class="w-full sm:w-1/3 p-3 glass border-none rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="חפש לפי מספר הזמנה, לקוח, כתובת...">
-            <select id="statusFilter" class="w-full sm:w-1/4 p-3 glass border-none rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                <option value="הכל">הכל</option>
-                <option value="ממתין">ממתין</option>
-                <option value="בטיפול">בטיפול</option>
-                <option value="הושלם">הושלם</option>
-                <option value="בוטל">בוטל</option>
-            </select>
-            <button onclick="shareMorningReport()" class="w-full sm:w-auto glass bg-indigo-600 text-white p-3 rounded-lg hover:bg-indigo-700 transition duration-300">📤 שתף דוח בוקר ב-WhatsApp</button>
+        <!-- Search and Filter Bar -->
+        <div class="glass-effect p-4 mb-4">
+            <div class="flex flex-col md:flex-row gap-3">
+                <!-- Search Bar -->
+                <div class="flex-1 relative">
+                    <input type="text" id="searchInput" 
+                           class="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 pr-10"
+                           placeholder="חפש הזמנה, לקוח, כתובת...">
+                    <i class="fas fa-search absolute right-3 top-3.5 text-gray-400"></i>
+                </div>
+                
+                <!-- Status Filter -->
+                <div class="flex-1">
+                    <select id="statusFilter" class="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="all">הכל</option>
+                        <option value="ממתין">בהמתנה</option>
+                        <option value="בטיפול">בביצוע</option>
+                        <option value="הושלם">הושלם</option>
+                        <option value="בוטל">בוטל</option>
+                    </select>
+                </div>
+                
+                <!-- Warehouse Filter -->
+                <div class="flex-1">
+                    <select id="warehouseFilter" class="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="all">כל המחסנים</option>
+                        <option value="מחסן החרש">מחסן החרש</option>
+                        <option value="מחסן התלמיד">מחסן התלמיד</option>
+                    </select>
+                </div>
+            </div>
         </div>
 
         <!-- Tabs -->
-        <div class="mb-6">
-            <ul class="flex border-b border-indigo-200">
+        <div class="glass-effect p-2 mb-4">
+            <ul class="flex border-b border-gray-200">
                 <li class="mr-1">
-                    <a class="bg-transparent inline-block py-2 px-4 text-indigo-600 font-semibold border-b-2 border-indigo-600" href="#orders" onclick="showTab('orders')">הזמנות</a>
+                    <a class="bg-white inline-block py-2 px-4 text-blue-600 font-semibold border-b-2 border-blue-600 rounded-t-lg" 
+                       href="#orders" onclick="showTab('orders')">
+                       <i class="fas fa-list-ul mr-1"></i>הזמנות
+                    </a>
                 </li>
                 <li class="mr-1">
-                    <a class="bg-transparent inline-block py-2 px-4 text-gray-600 font-semibold" href="#drivers" onclick="showTab('drivers')">לוח נהגים</a>
+                    <a class="bg-white inline-block py-2 px-4 text-gray-600 font-semibold rounded-t-lg hover:text-blue-600" 
+                       href="#drivers" onclick="showTab('drivers')">
+                       <i class="fas fa-users mr-1"></i>נהגים
+                    </a>
+                </li>
+                <li class="mr-1">
+                    <button onclick="generateMorningReport()" 
+                            class="bg-green-500 hover:bg-green-600 text-white py-2 px-4 rounded-lg font-semibold">
+                            <i class="fab fa-whatsapp mr-1"></i>שלח דוח בוקר
+                    </button>
+                </li>
+                <li class="flex-1 text-left">
+                    <button onclick="openOrderForm()" 
+                            class="bg-blue-600 hover:bg-blue-700 text-white p-2 rounded-lg font-semibold blink neon-effect">
+                            <i class="fas fa-plus mr-1"></i>הזמנה חדשה
+                    </button>
                 </li>
             </ul>
         </div>
 
         <!-- Loading Indicator -->
         <div id="loading" class="loading">
-            <svg class="animate-spin h-8 w-8 text-indigo-600 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <svg class="animate-spin h-10 w-10 text-blue-600 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
             </svg>
+            <p class="mt-2 text-gray-600">טוען נתונים...</p>
         </div>
-        <div id="error" class="error text-center"></div>
+        
+        <div id="error" class="error"></div>
 
         <!-- Orders Table -->
         <div id="orders" class="tab-content">
-            <button onclick="openOrderForm()" class="mb-6 glass bg-indigo-600 text-white p-3 rounded-lg hover:bg-indigo-700 blink transition duration-300">➕ הזמנה חדשה</button>
-            <div class="overflow-x-auto glass p-4">
-                <table id="ordersTable" class="w-full">
+            <div class="table-container">
+                <table id="ordersTable" class="w-full bg-white rounded-lg overflow-hidden shadow-sm">
                     <thead>
-                        <tr class="bg-indigo-100 bg-opacity-30 text-right text-sm">
+                        <tr class="bg-blue-600 text-white text-right text-sm">
                             <th class="p-3">מספר הזמנה</th>
-                            <th class="p-3">תאריך</th>
-                            <th class="p-3">שעה</th>
                             <th class="p-3">לקוח</th>
                             <th class="p-3">כתובת</th>
                             <th class="p-3">מחסן</th>
+                            <th class="p-3">תאריך ושעה</th>
                             <th class="p-3">סטטוס</th>
                             <th class="p-3">נהג</th>
-                            <th class="p-3">סוג פעולה</th>
-                            <th class="p-3">זמן אספקה</th>
-                            <th class="p-3">הערות</th>
-                            <th class="p-3">תאריך יצירה</th>
                             <th class="p-3">פעולות</th>
                         </tr>
                     </thead>
-                    <tbody id="ordersBody"></tbody>
+                    <tbody id="ordersBody" class="divide-y divide-gray-100"></tbody>
                 </table>
+            </div>
+            
+            <div class="mt-4 text-center text-gray-500" id="noOrdersMessage" style="display: none;">
+                <i class="fas fa-box-open text-3xl mb-2"></i>
+                <p>לא נמצאו הזמנות תואמות לחיפוש</p>
             </div>
         </div>
 
         <!-- Driver Schedule -->
         <div id="drivers" class="tab-content hidden">
-            <div class="overflow-x-auto glass p-4">
-                <table id="driversTable" class="w-full">
-                    <thead>
-                        <tr class="bg-indigo-100 bg-opacity-30 text-right text-sm">
-                            <th class="p-3">נהג</th>
-                            <th class="p-3">מספר הזמנות</th>
-                            <th class="p-3">פרטי הזמנות</th>
-                        </tr>
-                    </thead>
-                    <tbody id="driversBody"></tbody>
-                </table>
+            <div class="mb-4">
+                <select id="driverFilter" class="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <option value="all">כל הנהגים</option>
+                </select>
+            </div>
+            
+            <div class="glass-effect p-4 mb-4">
+                <div id="driverScheduleHeader" class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-semibold" id="selectedDriverName">לוח זמנים לנהג</h3>
+                    <div class="flex space-x-2 space-x-reverse">
+                        <button id="shareDriverSchedule" class="bg-blue-100 text-blue-600 p-2 rounded-lg hover:bg-blue-200">
+                            <i class="fas fa-share-alt mr-1"></i>שתף לוח זמנים
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="relative">
+                    <div id="timelineContainer" style="height: 720px; overflow-y: auto;">
+                        <!-- Timeline will be generated here -->
+                    </div>
+                </div>
             </div>
         </div>
 
-        <!-- Popup Form -->
-        <div id="orderFormModal" class="modal fixed inset-0 bg-gray-600 bg-opacity-50 items-center justify-center">
-            <div class="glass p-6 rounded-lg shadow-lg w-full max-w-lg modal-content">
-                <h2 id="formTitle" class="text-xl font-bold mb-4 text-indigo-800">הוסף הזמנה חדשה</h2>
-                <div id="formError" class="error"></div>
-                <form id="orderForm">
-                    <input type="hidden" id="orderId" name="orderId">
+        <!-- Order Details Modal -->
+        <div id="orderDetailsModal" class="modal fixed inset-0 bg-gray-600 bg-opacity-50 items-center justify-center p-4">
+            <div class="bg-white rounded-lg shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+                <div class="flex justify-between items-center border-b p-4">
+                    <h3 class="text-xl font-bold text-blue-800">פרטי הזמנה</h3>
+                    <button onclick="closeOrderDetails()" class="text-gray-500 hover:text-gray-700">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="p-4" id="orderDetailsContent"></div>
+            </div>
+        </div>
+
+        <!-- Order Form Modal -->
+        <div id="orderFormModal" class="modal fixed inset-0 bg-gray-600 bg-opacity-50 items-center justify-center p-4">
+            <div class="bg-white rounded-lg shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+                <div class="flex justify-between items-center border-b p-4">
+                    <h3 id="formTitle" class="text-xl font-bold text-blue-800">הוסף הזמנה חדשה</h3>
+                    <button onclick="closeOrderForm()" class="text-gray-500 hover:text-gray-700">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="p-4">
+                    <div id="formError" class="error mb-4"></div>
+                    <form id="orderForm">
+                        <input type="hidden" id="orderId">
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">מספר הזמנה *</label>
+                                <input type="text" id="orderNumber" name="orderNumber" 
+                                       class="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                                <p id="orderNumberError" class="error text-sm hidden mt-1">מספר הזמנה כבר קיים במערכת</p>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">מחסן *</label>
+                                <select id="warehouse" name="warehouse" 
+                                        class="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                                    <option value="">בחר מחסן</option>
+                                    <option value="מחסן החרש">מחסן החרש</option>
+                                    <option value="מחסן התלמיד">מחסן התלמיד</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">תאריך *</label>
+                                <input type="date" id="orderDate" name="date" 
+                                       class="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">שעה *</label>
+                                <input type="time" id="orderTime" name="time" 
+                                       class="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">לקוח *</label>
+                            <input type="text" id="customer" name="customer" 
+                                   class="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">כתובת *</label>
+                            <input type="text" id="address" name="address" 
+                                   class="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                        </div>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">סטטוס *</label>
+                                <select id="status" name="status" 
+                                        class="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                                    <option value="ממתין">ממתין</option>
+                                    <option value="בטיפול">בטיפול</option>
+                                    <option value="הושלם">הושלם</option>
+                                    <option value="בוטל">בוטל</option>
+                                </select>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">נהג</label>
+                                <input type="text" id="driver" name="driver" 
+                                       class="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
+                        </div>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">סוג פעולה</label>
+                                <input type="text" id="actionType" name="actionType" 
+                                       class="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">זמן אספקה (דקות)</label>
+                                <input type="number" id="deliveryTime" name="deliveryTime" 
+                                       class="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" min="0">
+                            </div>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">הערות</label>
+                            <textarea id="notes" name="notes" 
+                                      class="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" rows="3"></textarea>
+                        </div>
+                        
+                        <div class="flex justify-end space-x-2 space-x-reverse pt-4 border-t">
+                            <button type="button" onclick="closeOrderForm()" 
+                                    class="bg-gray-500 hover:bg-gray-600 text-white p-3 rounded-lg font-semibold flex items-center">
+                                    <i class="fas fa-times mr-1"></i> ביטול
+                            </button>
+                            <button type="submit" 
+                                    class="bg-blue-600 hover:bg-blue-700 text-white p-3 rounded-lg font-semibold flex items-center">
+                                    <i class="fas fa-save mr-1"></i> שמור הזמנה
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Share Order Modal -->
+        <div id="shareOrderModal" class="modal fixed inset-0 bg-gray-600 bg-opacity-50 items-center justify-center p-4">
+            <div class="bg-white rounded-lg shadow-xl w-full max-w-md">
+                <div class="flex justify-between items-center border-b p-4">
+                    <h3 class="text-xl font-bold text-blue-800">שתף הזמנה לנהג</h3>
+                    <button onclick="closeShareModal()" class="text-gray-500 hover:text-gray-700">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="p-4">
                     <div class="mb-4">
-                        <label class="block text-sm font-medium text-gray-700">מספר הזמנה</label>
-                        <input type="text" id="orderNumber" name="orderNumber" class="w-full p-2 glass border-none rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" required>
-                        <p id="orderNumberError" class="error text-sm hidden">מספר הזמנה כבר קיים</p>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">בחר נהג:</label>
+                        <div class="relative">
+                            <button id="driverDropdownButton" class="w-full p-3 border rounded-lg text-right flex justify-between items-center">
+                                <span id="selectedDriver">בחר נהג</span>
+                                <i class="fas fa-chevron-down"></i>
+                            </button>
+                            <div id="driverDropdown" class="dropdown-menu mt-1 w-full">
+                                <!-- Drivers will be populated here -->
+                            </div>
+                        </div>
                     </div>
-                    <div class="mb-4">
-                        <label class="block text-sm font-medium text-gray-700">תאריך</label>
-                        <input type="date" id="orderDate" name="date" class="w-full p-2 glass border-none rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" required>
+                    
+                    <div id="customPhoneSection" class="hidden">
+                        <div class="mb-4">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">מספר טלפון:</label>
+                            <div class="led-display" id="phoneDisplay">+972</div>
+                            <div class="grid grid-cols-3 gap-2 mb-2">
+                                <button onclick="appendPhoneNumber('1')" class="p-3 bg-gray-100 rounded-lg hover:bg-gray-200">1</button>
+                                <button onclick="appendPhoneNumber('2')" class="p-3 bg-gray-100 rounded-lg hover:bg-gray-200">2</button>
+                                <button onclick="appendPhoneNumber('3')" class="p-3 bg-gray-100 rounded-lg hover:bg-gray-200">3</button>
+                                <button onclick="appendPhoneNumber('4')" class="p-3 bg-gray-100 rounded-lg hover:bg-gray-200">4</button>
+                                <button onclick="appendPhoneNumber('5')" class="p-3 bg-gray-100 rounded-lg hover:bg-gray-200">5</button>
+                                <button onclick="appendPhoneNumber('6')" class="p-3 bg-gray-100 rounded-lg hover:bg-gray-200">6</button>
+                                <button onclick="appendPhoneNumber('7')" class="p-3 bg-gray-100 rounded-lg hover:bg-gray-200">7</button>
+                                <button onclick="appendPhoneNumber('8')" class="p-3 bg-gray-100 rounded-lg hover:bg-gray-200">8</button>
+                                <button onclick="appendPhoneNumber('9')" class="p-3 bg-gray-100 rounded-lg hover:bg-gray-200">9</button>
+                                <button onclick="appendPhoneNumber('0')" class="p-3 bg-gray-100 rounded-lg hover:bg-gray-200">0</button>
+                                <button onclick="appendPhoneNumber('+')" class="p-3 bg-gray-100 rounded-lg hover:bg-gray-200">+</button>
+                                <button onclick="backspacePhoneNumber()" class="p-3 bg-gray-100 rounded-lg hover:bg-gray-200">
+                                    <i class="fas fa-backspace"></i>
+                                </button>
+                            </div>
+                        </div>
                     </div>
-                    <div class="mb-4">
-                        <label class="block text-sm font-medium text-gray-700">שעה</label>
-                        <input type="time" id="orderTime" name="time" class="w-full p-2 glass border-none rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" required>
+                    
+                    <div class="flex justify-end space-x-2 space-x-reverse pt-4 border-t">
+                        <button onclick="closeShareModal()" class="bg-gray-500 hover:bg-gray-600 text-white p-3 rounded-lg font-semibold">
+                            ביטול
+                        </button>
+                        <button id="confirmShareButton" onclick="shareOrder()" class="bg-blue-600 hover:bg-blue-700 text-white p-3 rounded-lg font-semibold">
+                            שלח
+                        </button>
                     </div>
-                    <div class="mb-4">
-                        <label class="block text-sm font-medium text-gray-700">לקוח</label>
-                        <input type="text" id="customer" name="customer" class="w-full p-2 glass border-none rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" required>
-                    </div>
-                    <div class="mb-4">
-                        <label class="block text-sm font-medium text-gray-700">כתובת</label>
-                        <input type="text" id="address" name="address" class="w-full p-2 glass border-none rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" required>
-                    </div>
-                    <div class="mb-4">
-                        <label class="block text-sm font-medium text-gray-700">מחסן</label>
-                        <select id="warehouse" name="warehouse" class="w-full p-2 glass border-none rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" required>
-                            <option value="החרש">החרש</option>
-                            <option value="התלמיד">התלמיד</option>
-                        </select>
-                    </div>
-                    <div class="mb-4">
-                        <label class="block text-sm font-medium text-gray-700">סטטוס</label>
-                        <select id="status" name="status" class="w-full p-2 glass border-none rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" required>
-                            <option value="ממתין">ממתין</option>
-                            <option value="בטיפול">בטיפול</option>
-                            <option value="הושלם">הושלם</option>
-                            <option value="בוטל">בוטל</option>
-                        </select>
-                    </div>
-                    <div class="mb-4">
-                        <label class="block text-sm font-medium text-gray-700">נהג</label>
-                        <input type="text" id="driver" name="driver" class="w-full p-2 glass border-none rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                    </div>
-                    <div class="mb-4">
-                        <label class="block text-sm font-medium text-gray-700">סוג פעולה</label>
-                        <input type="text" id="actionType" name="actionType" class="w-full p-2 glass border-none rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                    </div>
-                    <div class="mb-4">
-                        <label class="block text-sm font-medium text-gray-700">זמן אספקה (דקות)</label>
-                        <input type="number" id="deliveryTime" name="deliveryTime" class="w-full p-2 glass border-none rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" min="0">
-                    </div>
-                    <div class="mb-4">
-                        <label class="block text-sm font-medium text-gray-700">הערות</label>
-                        <textarea id="notes" name="notes" class="w-full p-2 glass border-none rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" rows="4"></textarea>
-                    </div>
-                    <div class="flex justify-end space-x-2 space-x-reverse">
-                        <button type="button" onclick="closeOrderForm()" class="glass bg-gray-500 text-white p-2 rounded-lg hover:bg-gray-600 transition duration-300">בטל</button>
-                        <button type="submit" class="glass bg-indigo-600 text-white p-2 rounded-lg hover:bg-indigo-700 transition duration-300">שמור</button>
-                    </div>
-                </form>
+                </div>
             </div>
         </div>
     </div>
 
     <script>
-        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxKzam_7HZOw_FdPwU-gqHr89-l-4f_oKiCj5YngCYxAxOQDlG6RxM5YWCwWmySlrGjUw/exec';
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwsRCjL8j6ZHOYXr8B3J4hbSCeAd3K8nWNqEiJ0tVgQJ4FpFsfVWEja5rvY8hwQ7vHC5g/exec';
         const WHATSAPP_NUMBER = '0508860896';
+        let allOrders = [];
+        let currentOrderToShare = null;
+        let selectedDriverPhone = '';
+        let driversList = [];
 
         // Show loading indicator
         function showLoading(show) {
@@ -257,45 +573,56 @@
             document.getElementById('error').style.display = 'none';
         }
 
-        // Show error message with detailed logging
+        // Show error message
         function showError(message) {
             const errorDiv = document.getElementById('error');
-            errorDiv.textContent = message;
+            errorDiv.innerHTML = `<i class="fas fa-exclamation-circle mr-2"></i>${message}`;
             errorDiv.style.display = 'block';
-            console.error('Error displayed at', new Date().toLocaleTimeString('he-IL'), ':', message);
         }
 
         // Format date to DD-MM-YYYY
         function formatDate(dateStr) {
-            if (!dateStr) return '-';
+            if (!dateStr) return '';
             const date = new Date(dateStr);
-            if (isNaN(date)) return dateStr; // Return as-is if not a valid date
+            if (isNaN(date)) return dateStr;
+            
             const day = String(date.getDate()).padStart(2, '0');
             const month = String(date.getMonth() + 1).padStart(2, '0');
             const year = date.getFullYear();
+            
             return `${day}-${month}-${year}`;
         }
 
         // Format time to HH:MM
         function formatTime(timeStr) {
-            if (!timeStr) return '-';
-            const [hours, minutes] = timeStr.split(':');
-            return `${hours.padStart(2, '0')}:${minutes.padStart(2, '0')}`;
+            if (!timeStr) return '';
+            if (timeStr.includes(':')) return timeStr.split(':').slice(0, 2).join(':');
+            return timeStr;
+        }
+
+        // Format date and time for display
+        function formatDateTime(dateStr, timeStr) {
+            return `${formatDate(dateStr)} ${formatTime(timeStr)}`;
+        }
+
+        // Calculate time position in timeline
+        function calculateTimePosition(timeStr) {
+            if (!timeStr) return 0;
+            const [hours, minutes] = timeStr.split(':').map(Number);
+            return (hours - 6) * 60 + minutes;
         }
 
         // Check Web App health
         async function checkHealth() {
-            const url = `${SCRIPT_URL}?action=health`;
-            console.log('Fetching health check at', new Date().toLocaleTimeString('he-IL'), ':', url);
             try {
-                const response = await fetch(url, { method: 'GET' });
+                const response = await fetch(`${SCRIPT_URL}?action=health`, { method: 'GET' });
                 if (!response.ok) {
                     const text = await response.text();
                     throw new Error(`שגיאת שרת: ${response.status} ${text.startsWith('<!DOCTYPE') ? '(התקבלה תגובת HTML, ייתכן שצריך להתחבר או שהגישה נדחתה)' : text}`);
                 }
                 const data = await response.json();
                 if (data.error) throw new Error(data.error);
-                console.log('Health check successful at', new Date().toLocaleTimeString('he-IL'), ':', data.message);
+                console.log('Health check successful:', data.message);
             } catch (error) {
                 showError('שגיאה בחיבור לשרת: ' + error.message);
             }
@@ -303,122 +630,469 @@
 
         // Fetch and display orders
         async function fetchOrders(retryCount = 0) {
-            const url = `${SCRIPT_URL}?action=getOrdersWithCache`;
-            console.log('Fetching orders at', new Date().toLocaleTimeString('he-IL'), ':', url);
             showLoading(true);
             try {
-                const response = await fetch(url, { method: 'GET' });
+                const response = await fetch(`${SCRIPT_URL}?action=getOrders`, { method: 'GET' });
                 if (!response.ok) {
                     const text = await response.text();
                     throw new Error(`שגיאה בטעינת ההזמנות: ${response.status} ${text.startsWith('<!DOCTYPE') ? '(התקבלה תגובת HTML, בדוק הרשאות או התחברות)' : text}`);
                 }
                 const data = await response.json();
                 if (data.error) throw new Error(data.error);
-                const orders = data;
-                renderOrders(orders);
-                updateKPIs(orders);
-                fetchDriverSchedule(orders);
+                
+                allOrders = data;
+                updateKPIs(allOrders);
+                renderOrders(allOrders);
+                updateDriversList(allOrders);
+                renderDriverSchedule();
             } catch (error) {
-                console.error('Fetch orders error:', error);
                 if (retryCount < 3) {
-                    console.log(`Retrying fetchOrders (${retryCount + 1}/3) at`, new Date().toLocaleTimeString('he-IL'));
                     setTimeout(() => fetchOrders(retryCount + 1), 5000);
                 } else {
-                    showError('שגיאה בטעינת ההזמנות: ' + error.message);
+                    showError(error.message);
                 }
             } finally {
                 showLoading(false);
             }
         }
 
-        // Render orders with filters
-        function renderOrders(orders) {
-            const statusFilter = document.getElementById('statusFilter').value;
-            const search = document.getElementById('searchInput').value.toLowerCase();
-            const filteredOrders = orders.filter(order => {
-                const matchesStatus = statusFilter === 'הכל' || order['סטטוס'] === statusFilter;
-                const matchesSearch = order['מספר הזמנה'].toLowerCase().includes(search) ||
-                                     order['לקוח'].toLowerCase().includes(search) ||
-                                     order['כתובת'].toLowerCase().includes(search);
-                return matchesStatus && matchesSearch;
-            });
+        // Update KPI counters
+        function updateKPIs(orders) {
+            document.getElementById('totalOrders').textContent = orders.length;
+            document.getElementById('pendingOrders').textContent = orders.filter(o => o['סטטוס'] === 'ממתין').length;
+            document.getElementById('inProgressOrders').textContent = orders.filter(o => o['סטטוס'] === 'בטיפול').length;
+            document.getElementById('completedOrders').textContent = orders.filter(o => o['סטטוס'] === 'הושלם').length;
+            document.getElementById('cancelledOrders').textContent = orders.filter(o => o['סטטוס'] === 'בוטל').length;
+        }
 
+        // Render orders table
+        function renderOrders(orders) {
+            const filteredOrders = filterOrders(orders);
             const tbody = document.getElementById('ordersBody');
             tbody.innerHTML = '';
-            filteredOrders.forEach(order => {
-                const row = document.createElement('tr');
-                row.className = 'table-row';
-                row.innerHTML = `
-                    <td class="p-3">${order['מספר הזמנה']}</td>
-                    <td class="p-3">${formatDate(order['תאריך'])}</td>
-                    <td class="p-3">${formatTime(order['שעה'])}</td>
-                    <td class="p-3">${order['לקוח']}</td>
-                    <td class="p-3">${order['כתובת']}</td>
-                    <td class="p-3">${order['מחסן']}</td>
-                    <td class="p-3 ${order['סטטוס'] === 'הושלם' ? 'text-green-600' : order['סטטוס'] === 'בטיפול' ? 'text-yellow-600' : order['סטטוס'] === 'בוטל' ? 'text-red-600' : 'text-orange-600'}">${order['סטטוס']}</td>
-                    <td class="p-3">${order['נהג'] || '-'}</td>
-                    <td class="p-3">${order['סוג פעולה'] || '-'}</td>
-                    <td class="p-3">${order['זמן אספקה (דקות)'] || '-'}</td>
-                    <td class="p-3">${order['הערות'] || '-'}</td>
-                    <td class="p-3">${formatDate(order['תאריך יצירה'])}</td>
-                    <td class="p-3">
-                        <button onclick="editOrder('${order['מספר הזמנה']}')" class="text-indigo-600 hover:text-indigo-800">ערוך</button>
-                        <button onclick="deleteOrder('${order['מספר הזמנה']}')" class="text-red-600 hover:text-red-800 mr-2">מחק</button>
-                    </td>
-                `;
-                tbody.appendChild(row);
-            });
-        }
-
-        // Update KPI metrics
-        function updateKPIs(orders) {
-            const totalOrders = orders.length;
-            const pendingOrders = orders.filter(order => order['סטטוס'] === 'ממתין').length;
-            const completedOrders = orders.filter(order => order['סטטוס'] === 'הושלם').length;
-            const canceledOrders = orders.filter(order => order['סטטוס'] === 'בוטל').length;
-
-            document.getElementById('totalOrders').textContent = totalOrders;
-            document.getElementById('pendingOrders').textContent = pendingOrders;
-            document.getElementById('completedOrders').textContent = completedOrders;
-            document.getElementById('canceledOrders').textContent = canceledOrders;
-        }
-
-        // Fetch and display driver schedule
-        function fetchDriverSchedule(orders) {
-            const drivers = {};
-            orders.forEach(order => {
-                const driver = order['נהג'];
-                if (driver && driver !== '-') {
-                    if (!drivers[driver]) drivers[driver] = [];
-                    drivers[driver].push(order);
-                }
-            });
-            const tbody = document.getElementById('driversBody');
-            tbody.innerHTML = '';
-            for (const driver in drivers) {
-                const row = document.createElement('tr');
-                row.className = 'table-row';
-                const ordersList = drivers[driver].map(o => `הזמנה ${o['מספר הזמנה']} (${o['לקוח']}, ${o['כתובת']}, ${o['סטטוס']})`).join('<br>');
-                row.innerHTML = `
-                    <td class="p-3">${driver}</td>
-                    <td class="p-3">${drivers[driver].length}</td>
-                    <td class="p-3">${ordersList}</td>
-                `;
-                tbody.appendChild(row);
+            
+            if (filteredOrders.length === 0) {
+                document.getElementById('noOrdersMessage').style.display = 'block';
+            } else {
+                document.getElementById('noOrdersMessage').style.display = 'none';
+                
+                filteredOrders.forEach(order => {
+                    const row = document.createElement('tr');
+                    row.className = 'hover:bg-gray-50';
+                    row.innerHTML = `
+                        <td class="p-3 font-medium">${order['מספר הזמנה']}</td>
+                        <td class="p-3">${order['לקוח']}</td>
+                        <td class="p-3">${order['כתובת']}</td>
+                        <td class="p-3">${order['מחסן']}</td>
+                        <td class="p-3">${formatDateTime(order['תאריך'], order['שעה'])}</td>
+                        <td class="p-3">
+                            <span class="px-2 py-1 rounded-full text-xs font-medium ${
+                                order['סטטוס'] === 'ממתין' ? 'status-pending' : 
+                                order['סטטוס'] === 'בטיפול' ? 'status-in-progress' : 
+                                order['סטטוס'] === 'הושלם' ? 'status-completed' : 'status-cancelled'
+                            }">
+                                ${order['סטטוס']}
+                            </span>
+                        </td>
+                        <td class="p-3">${order['נהג'] || '-'}</td>
+                        <td class="p-3">
+                            <div class="flex space-x-2 space-x-reverse">
+                                <button onclick="showOrderDetails('${order['מספר הזמנה']}')" class="text-blue-600 hover:text-blue-800">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                                <button onclick="editOrder('${order['מספר הזמנה']}')" class="text-yellow-600 hover:text-yellow-800">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button onclick="openShareModal('${order['מספר הזמנה']}')" class="text-green-600 hover:text-green-800">
+                                    <i class="fas fa-share-alt"></i>
+                                </button>
+                                <button onclick="deleteOrder('${order['מספר הזמנה']}')" class="text-red-600 hover:text-red-800">
+                                    <i class="fas fa-trash-alt"></i>
+                                </button>
+                            </div>
+                        </td>
+                    `;
+                    tbody.appendChild(row);
+                });
             }
         }
 
-        // Search and filter functionality
-        let allOrders = [];
-        document.getElementById('searchInput').addEventListener('input', () => renderOrders(allOrders));
-        document.getElementById('statusFilter').addEventListener('change', () => renderOrders(allOrders));
+        // Apply filters to orders
+        function filterOrders(orders) {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const statusFilter = document.getElementById('statusFilter').value;
+            const warehouseFilter = document.getElementById('warehouseFilter').value;
+            
+            return orders.filter(order => {
+                // Search filter
+                const matchesSearch = 
+                    order['מספר הזמנה'].toLowerCase().includes(searchTerm) ||
+                    order['לקוח'].toLowerCase().includes(searchTerm) ||
+                    (order['כתובת'] && order['כתובת'].toLowerCase().includes(searchTerm));
+                
+                // Status filter
+                const matchesStatus = statusFilter === 'all' || order['סטטוס'] === statusFilter;
+                
+                // Warehouse filter
+                const matchesWarehouse = warehouseFilter === 'all' || order['מחסן'] === warehouseFilter;
+                
+                return matchesSearch && matchesStatus && matchesWarehouse;
+            });
+        }
+
+        // Update drivers list from orders
+        function updateDriversList(orders) {
+            const drivers = new Set();
+            orders.forEach(order => {
+                if (order['נהג'] && order['נהג'] !== '-') {
+                    drivers.add(order['נהג']);
+                }
+            });
+            
+            driversList = Array.from(drivers).sort();
+            
+            // Update driver filter dropdown
+            const driverFilter = document.getElementById('driverFilter');
+            driverFilter.innerHTML = '<option value="all">כל הנהגים</option>';
+            driversList.forEach(driver => {
+                const option = document.createElement('option');
+                option.value = driver;
+                option.textContent = driver;
+                driverFilter.appendChild(option);
+            });
+            
+            // Update share dropdown
+            const driverDropdown = document.getElementById('driverDropdown');
+            driverDropdown.innerHTML = '';
+            
+            driversList.forEach(driver => {
+                const item = document.createElement('a');
+                item.className = 'dropdown-item';
+                item.href = '#';
+                item.textContent = driver;
+                item.onclick = (e) => {
+                    e.preventDefault();
+                    document.getElementById('selectedDriver').textContent = driver;
+                    document.getElementById('customPhoneSection').classList.add('hidden');
+                    selectedDriverPhone = getDriverPhone(driver);
+                    document.getElementById('driverDropdown').classList.remove('show');
+                };
+                driverDropdown.appendChild(item);
+            });
+            
+            // Add "Other" option
+            const otherItem = document.createElement('a');
+            otherItem.className = 'dropdown-item';
+            otherItem.href = '#';
+            otherItem.textContent = 'אחר';
+            otherItem.onclick = (e) => {
+                e.preventDefault();
+                document.getElementById('selectedDriver').textContent = 'הזן מספר טלפון';
+                document.getElementById('customPhoneSection').classList.remove('hidden');
+                document.getElementById('phoneDisplay').textContent = '+972';
+                selectedDriverPhone = '';
+                document.getElementById('driverDropdown').classList.remove('show');
+            };
+            driverDropdown.appendChild(otherItem);
+        }
+
+        // Get driver phone number (mock function - replace with actual data)
+        function getDriverPhone(driverName) {
+            // This is a mock function - in a real app you would have a mapping of drivers to phone numbers
+            if (driverName === 'עלי') return '9725475188';
+            if (driverName === 'חכמת') return '972532316985';
+            return '';
+        }
+
+        // Render driver schedule timeline
+        function renderDriverSchedule() {
+            const driverFilter = document.getElementById('driverFilter').value;
+            const filteredOrders = allOrders.filter(order => 
+                (driverFilter === 'all' || order['נהג'] === driverFilter) &&
+                order['נהג'] && order['נהג'] !== '-'
+            );
+            
+            const timelineContainer = document.getElementById('timelineContainer');
+            timelineContainer.innerHTML = '';
+            
+            if (filteredOrders.length === 0) {
+                timelineContainer.innerHTML = `
+                    <div class="text-center py-8 text-gray-500">
+                        <i class="fas fa-user-slash text-4xl mb-4"></i>
+                        <p>לא נמצאו הזמנות לנהג זה</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            // Create timeline from 06:00 to 17:00
+            for (let hour = 6; hour <= 17; hour++) {
+                const timeSlot = document.createElement('div');
+                timeSlot.className = 'time-slot';
+                
+                const timeLabel = document.createElement('div');
+                timeLabel.className = 'time-label';
+                timeLabel.textContent = `${hour}:00`;
+                
+                timeSlot.appendChild(timeLabel);
+                timelineContainer.appendChild(timeSlot);
+            }
+            
+            // Add orders to timeline
+            filteredOrders.forEach(order => {
+                if (!order['שעה']) return;
+                
+                const [hours, minutes] = order['שעה'].split(':').map(Number);
+                if (hours < 6 || hours > 17) return;
+                
+                const timePosition = calculateTimePosition(order['שעה']);
+                const timeSlotHeight = 60; // 60px per hour
+                const position = (timePosition / 60) * timeSlotHeight;
+                
+                const orderCard = document.createElement('div');
+                orderCard.className = `order-card ${
+                    order['סטטוס'] === 'ממתין' ? 'bg-yellow-100 border-yellow-200' : 
+                    order['סטטוס'] === 'בטיפול' ? 'bg-blue-100 border-blue-200' : 
+                    order['סטטוס'] === 'הושלם' ? 'bg-green-100 border-green-200' : 'bg-red-100 border-red-200'
+                } border`;
+                orderCard.style.top = `${position}px`;
+                
+                orderCard.innerHTML = `
+                    <div class="font-medium">${order['מספר הזמנה']}</div>
+                    <div class="text-sm truncate">${order['לקוח']}</div>
+                    <div class="text-xs text-gray-600">${order['שעה']}</div>
+                `;
+                
+                orderCard.onclick = () => showOrderDetails(order['מספר הזמנה']);
+                timelineContainer.appendChild(orderCard);
+            });
+            
+            // Update driver name in header
+            if (driverFilter !== 'all') {
+                document.getElementById('selectedDriverName').textContent = `לוח זמנים לנהג: ${driverFilter}`;
+            } else {
+                document.getElementById('selectedDriverName').textContent = 'לוח זמנים לכל הנהגים';
+            }
+        }
+
+        // Show order details
+        async function showOrderDetails(orderNumber) {
+            showLoading(true);
+            try {
+                const order = allOrders.find(o => o['מספר הזמנה'] === orderNumber);
+                if (!order) throw new Error('ההזמנה לא נמצאה');
+                
+                const content = document.getElementById('orderDetailsContent');
+                content.innerHTML = `
+                    <div class="grid grid-cols-2 gap-4 mb-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-500">מספר הזמנה</label>
+                            <p class="mt-1 font-medium">${order['מספר הזמנה']}</p>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-500">תאריך ושעה</label>
+                            <p class="mt-1">${formatDateTime(order['תאריך'], order['שעה'])}</p>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-4 mb-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-500">לקוח</label>
+                            <p class="mt-1">${order['לקוח']}</p>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-500">כתובת</label>
+                            <p class="mt-1">${order['כתובת']}</p>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-4 mb-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-500">מחסן</label>
+                            <p class="mt-1">${order['מחסן']}</p>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-500">סטטוס</label>
+                            <p class="mt-1">
+                                <span class="px-2 py-1 rounded-full text-xs font-medium ${
+                                    order['סטטוס'] === 'ממתין' ? 'status-pending' : 
+                                    order['סטטוס'] === 'בטיפול' ? 'status-in-progress' : 
+                                    order['סטטוס'] === 'הושלם' ? 'status-completed' : 'status-cancelled'
+                                }">
+                                    ${order['סטטוס']}
+                                </span>
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-4 mb-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-500">נהג</label>
+                            <p class="mt-1">${order['נהג'] || '-'}</p>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-500">סוג פעולה</label>
+                            <p class="mt-1">${order['סוג פעולה'] || '-'}</p>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-4 mb-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-500">זמן אספקה</label>
+                            <p class="mt-1">${order['זמן אספקה (דקות)'] || '-'} דקות</p>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-500">תאריך יצירה</label>
+                            <p class="mt-1">${formatDate(order['תאריך יצירה'])}</p>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-500">הערות</label>
+                        <p class="mt-1 p-3 bg-gray-50 rounded-lg">${order['הערות'] || 'אין הערות'}</p>
+                    </div>
+                    
+                    <div class="flex justify-end space-x-2 space-x-reverse pt-4 border-t">
+                        <button onclick="editOrder('${order['מספר הזמנה']}')" 
+                                class="bg-blue-600 hover:bg-blue-700 text-white p-2 rounded-lg font-semibold flex items-center">
+                                <i class="fas fa-edit mr-1"></i> ערוך הזמנה
+                        </button>
+                        <button onclick="openShareModal('${order['מספר הזמנה']}')" 
+                                class="bg-green-600 hover:bg-green-700 text-white p-2 rounded-lg font-semibold flex items-center">
+                                <i class="fas fa-share-alt mr-1"></i> שתף לנהג
+                        </button>
+                    </div>
+                `;
+                
+                document.getElementById('orderDetailsModal').classList.add('show');
+            } catch (error) {
+                showError(error.message);
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        // Close order details
+        function closeOrderDetails() {
+            document.getElementById('orderDetailsModal').classList.remove('show');
+        }
+
+        // Open share modal
+        function openShareModal(orderNumber) {
+            currentOrderToShare = allOrders.find(o => o['מספר הזמנה'] === orderNumber);
+            if (!currentOrderToShare) {
+                showError('ההזמנה לא נמצאה');
+                return;
+            }
+            
+            document.getElementById('selectedDriver').textContent = 'בחר נהג';
+            document.getElementById('customPhoneSection').classList.add('hidden');
+            selectedDriverPhone = '';
+            
+            document.getElementById('shareOrderModal').classList.add('show');
+        }
+
+        // Close share modal
+        function closeShareModal() {
+            document.getElementById('shareOrderModal').classList.remove('show');
+            currentOrderToShare = null;
+        }
+
+        // Append number to phone display
+        function appendPhoneNumber(num) {
+            const display = document.getElementById('phoneDisplay');
+            if (display.textContent.length < 15) { // Limit phone number length
+                display.textContent += num;
+                selectedDriverPhone = display.textContent.replace('+', '');
+            }
+        }
+
+        // Backspace phone number
+        function backspacePhoneNumber() {
+            const display = document.getElementById('phoneDisplay');
+            if (display.textContent.length > 4) { // Don't delete the +972 prefix
+                display.textContent = display.textContent.slice(0, -1);
+                selectedDriverPhone = display.textContent.replace('+', '');
+            }
+        }
+
+        // Share order to driver
+        function shareOrder() {
+            if (!currentOrderToShare) {
+                showError('לא נבחרה הזמנה לשיתוף');
+                return;
+            }
+            
+            if (!selectedDriverPhone) {
+                showError('נא לבחור נהג או להזין מספר טלפון');
+                return;
+            }
+            
+            const message = `פרטי הזמנה:
+מספר הזמנה: ${currentOrderToShare['מספר הזמנה']}
+לקוח: ${currentOrderToShare['לקוח']}
+כתובת: ${currentOrderToShare['כתובת']}
+מחסן: ${currentOrderToShare['מחסן']}
+תאריך: ${formatDate(currentOrderToShare['תאריך'])}
+שעה: ${formatTime(currentOrderToShare['שעה'])}
+הערות: ${currentOrderToShare['הערות'] || 'אין הערות'}`;
+            
+            const encodedMessage = encodeURIComponent(message);
+            window.open(`https://wa.me/${selectedDriverPhone}?text=${encodedMessage}`, '_blank');
+            
+            closeShareModal();
+        }
+
+        // Search functionality
+        document.getElementById('searchInput').addEventListener('input', function() {
+            renderOrders(allOrders);
+        });
+
+        // Filter functionality
+        document.getElementById('statusFilter').addEventListener('change', function() {
+            renderOrders(allOrders);
+        });
+
+        document.getElementById('warehouseFilter').addEventListener('change', function() {
+            renderOrders(allOrders);
+        });
+
+        document.getElementById('driverFilter').addEventListener('change', function() {
+            renderDriverSchedule();
+        });
+
+        // Driver dropdown toggle
+        document.getElementById('driverDropdownButton').addEventListener('click', function(e) {
+            e.stopPropagation();
+            document.getElementById('driverDropdown').classList.toggle('show');
+        });
+
+        // Close dropdown when clicking outside
+        window.addEventListener('click', function() {
+            document.getElementById('driverDropdown').classList.remove('show');
+        });
 
         // Show tab
         function showTab(tab) {
             document.querySelectorAll('.tab-content').forEach(content => content.classList.add('hidden'));
             document.getElementById(tab).classList.remove('hidden');
-            document.querySelectorAll('a[href^="#"]').forEach(link => link.classList.remove('border-b-2', 'border-indigo-600', 'text-indigo-600'));
-            document.querySelector(`a[href="#${tab}"]`).classList.add('border-b-2', 'border-indigo-600', 'text-indigo-600');
+            
+            // Update tab styling
+            document.querySelectorAll('ul li a').forEach(link => {
+                link.classList.remove('border-b-2', 'border-blue-600', 'text-blue-600');
+                link.classList.add('text-gray-600');
+            });
+            
+            const activeLink = document.querySelector(`a[href="#${tab}"]`);
+            if (activeLink) {
+                activeLink.classList.add('border-b-2', 'border-blue-600', 'text-blue-600');
+                activeLink.classList.remove('text-gray-600');
+            }
+            
+            // If showing drivers tab, render the schedule
+            if (tab === 'drivers') {
+                renderDriverSchedule();
+            }
         }
 
         // Open form
@@ -429,6 +1103,7 @@
             document.getElementById('orderId').value = order ? order['מספר הזמנה'] : '';
             document.getElementById('orderNumberError').classList.add('hidden');
             document.getElementById('formError').style.display = 'none';
+            
             if (order) {
                 document.getElementById('orderNumber').value = order['מספר הזמנה'];
                 document.getElementById('orderNumber').disabled = true;
@@ -444,6 +1119,17 @@
                 document.getElementById('notes').value = order['הערות'] || '';
             } else {
                 document.getElementById('orderNumber').disabled = false;
+                
+                // Set default date to today
+                const today = new Date().toISOString().split('T')[0];
+                document.getElementById('orderDate').value = today;
+                
+                // Set default time to now (rounded to nearest 15 minutes)
+                const now = new Date();
+                const minutes = Math.ceil(now.getMinutes() / 15) * 15;
+                now.setMinutes(minutes);
+                now.setSeconds(0);
+                document.getElementById('orderTime').value = now.toTimeString().substring(0, 5);
             }
         }
 
@@ -454,17 +1140,9 @@
 
         // Check if order number exists
         async function checkOrderNumber(orderNumber, isEdit = false) {
-            const url = `${SCRIPT_URL}?action=getOrdersWithCache`;
-            console.log('Checking order number at', new Date().toLocaleTimeString('he-IL'), ':', url, orderNumber);
             try {
-                const response = await fetch(url);
-                if (!response.ok) {
-                    const text = await response.text();
-                    throw new Error(`שגיאה בבדיקת מספר הזמנה: ${response.status} ${text.startsWith('<!DOCTYPE') ? '(התקבלה תגובת HTML)' : text}`);
-                }
-                const data = await response.json();
-                if (data.error) throw new Error(data.error);
-                return data.some(order => order['מספר הזמנה'] === orderNumber && (!isEdit || order['מספר הזמנה'] !== document.getElementById('orderId').value));
+                const existingOrder = allOrders.find(order => order['מספר הזמנה'] === orderNumber);
+                return !!existingOrder && (!isEdit || orderNumber !== document.getElementById('orderId').value);
             } catch (error) {
                 showError(error.message);
                 return false;
@@ -472,36 +1150,18 @@
         }
 
         // Edit order
-        async function editOrder(orderNumber, retryCount = 0) {
-            const url = `${SCRIPT_URL}?action=getOrder&orderNumber=${orderNumber}`;
-            console.log('Editing order at', new Date().toLocaleTimeString('he-IL'), ':', url);
-            showLoading(true);
-            try {
-                const response = await fetch(url);
-                if (!response.ok) {
-                    const text = await response.text();
-                    throw new Error(`שגיאה בטעינת ההזמנה: ${response.status} ${text.startsWith('<!DOCTYPE') ? '(התקבלה תגובת HTML)' : text}`);
-                }
-                const data = await response.json();
-                if (data.error) throw new Error(data.error);
-                openOrderForm(data);
-            } catch (error) {
-                console.error('Edit order error:', error);
-                if (retryCount < 3) {
-                    console.log(`Retrying editOrder (${retryCount + 1}/3) at`, new Date().toLocaleTimeString('he-IL'));
-                    setTimeout(() => editOrder(orderNumber, retryCount + 1), 5000);
-                } else {
-                    showError(error.message);
-                }
-            } finally {
-                showLoading(false);
+        async function editOrder(orderNumber) {
+            const order = allOrders.find(o => o['מספר הזמנה'] === orderNumber);
+            if (order) {
+                openOrderForm(order);
+            } else {
+                showError('ההזמנה לא נמצאה במערכת');
             }
         }
 
         // Delete order
         async function deleteOrder(orderNumber, retryCount = 0) {
-            if (confirm('האם למחוק את ההזמנה?')) {
-                console.log('Deleting order at', new Date().toLocaleTimeString('he-IL'), ':', orderNumber);
+            if (confirm('האם אתה בטוח שברצונך למחוק את ההזמנה?')) {
                 showLoading(true);
                 try {
                     const response = await fetch(SCRIPT_URL, {
@@ -516,9 +1176,7 @@
                     if (data.error) throw new Error(data.error);
                     fetchOrders();
                 } catch (error) {
-                    console.error('Delete order error:', error);
                     if (retryCount < 3) {
-                        console.log(`Retrying deleteOrder (${retryCount + 1}/3) at`, new Date().toLocaleTimeString('he-IL'));
                         setTimeout(() => deleteOrder(orderNumber, retryCount + 1), 5000);
                     } else {
                         showError(error.message);
@@ -529,21 +1187,83 @@
             }
         }
 
+        // Generate WhatsApp morning report
+        async function generateMorningReport() {
+            showLoading(true);
+            try {
+                const response = await fetch(`${SCRIPT_URL}?action=generateMorningReport`, { method: 'GET' });
+                if (!response.ok) {
+                    const text = await response.text();
+                    throw new Error(`שגיאה ביצירת הדוח: ${response.status} ${text.startsWith('<!DOCTYPE') ? '(התקבלה תגובת HTML)' : text}`);
+                }
+                const data = await response.json();
+                if (data.error) throw new Error(data.error);
+                
+                const reportText = encodeURIComponent(data.report);
+                window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${reportText}`, '_blank');
+            } catch (error) {
+                showError(error.message);
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        // Share driver schedule
+        document.getElementById('shareDriverSchedule').addEventListener('click', function() {
+            const driverFilter = document.getElementById('driverFilter').value;
+            if (driverFilter === 'all') {
+                showError('נא לבחור נהג ספציפי לשיתוף לוח הזמנים');
+                return;
+            }
+            
+            const driverOrders = allOrders.filter(order => 
+                order['נהג'] === driverFilter && order['נהג'] && order['נהג'] !== '-'
+            );
+            
+            if (driverOrders.length === 0) {
+                showError('לא נמצאו הזמנות לנהג זה');
+                return;
+            }
+            
+            const driverPhone = getDriverPhone(driverFilter);
+            if (!driverPhone) {
+                showError('לא נמצא מספר טלפון עבור נהג זה');
+                return;
+            }
+            
+            let message = `לוח זמנים לנהג ${driverFilter}:\n\n`;
+            
+            driverOrders.forEach(order => {
+                message += `הזמנה ${order['מספר הזמנה']}\n`;
+                message += `לקוח: ${order['לקוח']}\n`;
+                message += `כתובת: ${order['כתובת']}\n`;
+                message += `שעה: ${formatTime(order['שעה'])}\n`;
+                message += `סטטוס: ${order['סטטוס']}\n`;
+                message += `הערות: ${order['הערות'] || 'אין הערות'}\n\n`;
+            });
+            
+            const encodedMessage = encodeURIComponent(message);
+            window.open(`https://wa.me/${driverPhone}?text=${encodedMessage}`, '_blank');
+        });
+
         // Form submission
         document.getElementById('orderForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             const orderNumber = document.getElementById('orderNumber').value;
             const isEdit = !!document.getElementById('orderId').value;
-            console.log('Submitting form at', new Date().toLocaleTimeString('he-IL'), ':', { orderNumber, isEdit });
+            
+            // Validate order number
             if (!isEdit && await checkOrderNumber(orderNumber)) {
                 document.getElementById('orderNumberError').classList.remove('hidden');
                 return;
             }
+            
             document.getElementById('formError').style.display = 'none';
             showLoading(true);
+            
             try {
                 const order = {
-                    action: isEdit ? 'updateOrder' : 'addNewOrder',
+                    action: isEdit ? 'updateOrder' : 'addOrder',
                     orderNumber,
                     date: document.getElementById('orderDate').value,
                     time: document.getElementById('orderTime').value,
@@ -557,21 +1277,23 @@
                     notes: document.getElementById('notes').value,
                     creationDate: isEdit ? document.getElementById('orderId').value : new Date().toISOString().split('T')[0]
                 };
-                console.log('Sending order at', new Date().toLocaleTimeString('he-IL'), ':', order);
+                
                 const response = await fetch(SCRIPT_URL, {
                     method: 'POST',
                     body: JSON.stringify(order)
                 });
+                
                 if (!response.ok) {
                     const text = await response.text();
                     throw new Error(`שגיאה בשמירת ההזמנה: ${response.status} ${text.startsWith('<!DOCTYPE') ? '(התקבלה תגובת HTML)' : text}`);
                 }
+                
                 const data = await response.json();
                 if (data.error) throw new Error(data.error);
+                
                 closeOrderForm();
                 fetchOrders();
             } catch (error) {
-                console.error('Form submission error at', new Date().toLocaleTimeString('he-IL'), ':', error);
                 document.getElementById('formError').textContent = error.message;
                 document.getElementById('formError').style.display = 'block';
             } finally {
@@ -579,31 +1301,7 @@
             }
         });
 
-        // Share morning report
-        async function shareMorningReport() {
-            const url = `${SCRIPT_URL}?action=generateMorningReport`;
-            console.log('Generating morning report at', new Date().toLocaleTimeString('he-IL'), ':', url);
-            showLoading(true);
-            try {
-                const response = await fetch(url);
-                if (!response.ok) {
-                    const text = await response.text();
-                    throw new Error(`שגיאה ביצירת הדוח: ${response.status} ${text.startsWith('<!DOCTYPE') ? '(התקבלה תגובת HTML)' : text}`);
-                }
-                const data = await response.json();
-                if (data.error) throw new Error(data.error);
-                const whatsappUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${data.report}`;
-                window.open(whatsappUrl, '_blank');
-            } catch (error) {
-                console.error('Morning report error:', error);
-                showError(error.message);
-            } finally {
-                showLoading(false);
-            }
-        }
-
         // Initial load
-        console.log('Initializing app at', new Date().toLocaleTimeString('he-IL'));
         checkHealth();
         fetchOrders();
     </script>
