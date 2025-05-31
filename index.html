@@ -1,1636 +1,611 @@
 <!DOCTYPE html>
 <html lang="he" dir="rtl">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>מערכת ניהול הזמנות</title>
-  <link href="dist/output.css" rel="stylesheet">
-  <script src="script.js" defer></script>
-  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js">
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        primary: '#3b82f6',
-                        secondary: '#0ea5e9'
-                    },
-                    borderRadius: {
-                        'none': '0px',
-                        'sm': '4px',
-                        DEFAULT: '8px',
-                        'md': '12px',
-                        'lg': '16px',
-                        'xl': '20px',
-                        '2xl': '24px',
-                        '3xl': '32px',
-                        'full': '9999px',
-                        'button': '8px'
-                    }
-                }
-            }
-        }
-    </script>
-    <!-- Fonts & Icons -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/remixicon/4.6.0/remixicon.min.css">
-    
-    <!-- ECharts for Charts -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/echarts/5.5.0/echarts.min.js"></script>
-    
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>מערכת ניהול הזמנות ונהגים</title>
+    <link href="styles.css" rel="stylesheet" onerror="console.error('Failed to load styles.css'); this.style.display='none';">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <style>
         body {
             font-family: 'Rubik', sans-serif;
+            background: linear-gradient(135deg, #e0e7ff, #c3dafe);
+            min-height: 100vh;
         }
-        
-        /* Animations */
+        .glass {
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+        }
+        .table-row:nth-child(even) {
+            background: rgba(255, 255, 255, 0.1);
+        }
+        .table-row:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transition: background 0.3s ease;
+        }
+        .modal {
+            display: none;
+            animation: fadeIn 0.3s ease-in-out;
+        }
+        .modal.show {
+            display: flex;
+        }
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+        .error {
+            color: #ef4444;
+            display: none;
+            margin-bottom: 1rem;
+        }
+        table {
+            border-collapse: separate;
+            border-spacing: 0;
+        }
+        th, td {
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 12px;
+        }
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        .blink {
+            animation: blink 1.5s infinite;
+        }
         @keyframes fadeIn {
             from { opacity: 0; }
             to { opacity: 1; }
         }
-        
-        @keyframes slideIn {
-            from { transform: translateY(20px); opacity: 0; }
-            to { transform: translateY(0); opacity: 1; }
-        }
-        
-        .animate-fade-in {
-            animation: fadeIn 0.3s ease-out forwards;
-        }
-        
-        .animate-slide-in {
-            animation: slideIn 0.3s ease-out forwards;
-        }
-        
-        /* Status Badges */
-        .status-badge {
-            @apply px-2 py-1 rounded-full text-xs font-medium;
-        }
-        
-        .status-pending {
-            @apply bg-yellow-100 text-yellow-800;
-        }
-        
-        .status-inprogress {
-            @apply bg-blue-100 text-blue-800;
-        }
-        
-        .status-completed {
-            @apply bg-green-100 text-green-800;
-        }
-        
-        .status-cancelled {
-            @apply bg-red-100 text-red-800;
-        }
-        
-        /* Glassmorphism Effect */
-        .glassmorphism {
-            background: rgba(255, 255, 255, 0.2);
-            backdrop-filter: blur(8px);
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        }
-        
-        /* Login Background Gradient */
-        .login-gradient {
-            background: linear-gradient(135deg, #3b82f6 0%, #0ea5e9 100%);
-            background-size: 400% 400%;
-            animation: gradient 15s ease infinite;
-        }
-        
-        @keyframes gradient {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
-        }
-        
-        /* Shimmer Effect */
-        .shimmer {
-            background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.8) 50%, rgba(255,255,255,0) 100%);
-            background-size: 200% 100%;
-            animation: shimmer 2s infinite;
-        }
-        
-        @keyframes shimmer {
-            0% { background-position: -100% 0; }
-            100% { background-position: 100% 0; }
-        }
-        
-        /* Custom Scrollbar */
-        ::-webkit-scrollbar {
-            width: 8px;
-            height: 8px;
-        }
-        
-        ::-webkit-scrollbar-track {
-            background: #f1f1f1;
-            border-radius: 10px;
-        }
-        
-        ::-webkit-scrollbar-thumb {
-            background: #888;
-            border-radius: 10px;
-        }
-        
-        ::-webkit-scrollbar-thumb:hover {
-            background: #555;
+        @media (max-width: 640px) {
+            th, td {
+                padding: 8px;
+                font-size: 14px;
+            }
+            .container {
+                padding: 12px;
+            }
+            .modal-content {
+                width: 90%;
+            }
         }
     </style>
+    <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;700&display=swap" rel="stylesheet">
 </head>
-   <?!= include('output'); ?>
-  <body class="bg-gray-50">
-    <!-- Login Screen -->
-    <div id="loginScreen" class="fixed inset-0 z-50 login-gradient flex items-center justify-center p-4">
-        <div class="glassmorphism p-8 rounded-lg w-full max-w-md">
-            <div class="flex flex-col items-center mb-8">
-                <div class="w-24 h-24 rounded-full flex items-center justify-center bg-white shadow-lg mb-4">
-                    <i class="ri-building-2-line text-primary text-4xl"></i>
-                </div>
-                <h1 class="text-2xl font-bold text-white">מערכת ניהול הזמנות</h1>
-                <p class="text-white/80 mt-2">חנות חומרי בניין</p>
+<body>
+    <div class="container mx-auto p-6">
+        <h1 class="text-3xl font-bold mb-6 text-center text-indigo-800">מערכת ניהול הזמנות ונהגים</h1>
+
+        <!-- KPI Metrics -->
+        <div class="grid grid-cols-1 sm:grid-cols-4 gap-4 mb-6">
+            <div class="glass p-4 text-center">
+                <h3 class="text-lg font-semibold text-gray-800">סה"כ הזמנות</h3>
+                <p id="totalOrders" class="text-2xl font-bold text-indigo-600">0</p>
             </div>
-            
-            <div class="space-y-4">
-        <form id="loginForm" @submit.prevent="handleLogin">
-              <div>
-      <label for="username" class="block text-white mb-1">שם משתמש</label>
-      <input id="username" name="username" type="text" required
-             class="w-full px-4 py-2 rounded-lg border-none focus:ring-2 focus:ring-primary">
-    </div>
-    <div>
-      <label for="password" class="block text-white mb-1">סיסמה</label>
-      <input id="password" name="password" type="password" 
-       autocomplete="current-password"
-       required 
-       class="w-full px-4 py-2 rounded-lg border-none focus:ring-2 focus:ring-primary">
-    </div>
-         <button type="submit" 
-            class="w-full py-3 bg-white text-primary font-bold rounded-lg hover:bg-opacity-90 transition-all">
-                       כניסה למערכת
-     </button>
-  </form>
-</div>
-    <!-- Main Application -->
-    <div id="appContainer" class="hidden">
-        <!-- Top Navigation -->
-        <nav class="fixed top-0 w-full bg-white shadow-md z-40">
-            <div class="container mx-auto px-4 py-3 flex items-center justify-between">
-                <div class="flex items-center">
-                    <div class="w-10 h-10 rounded-full flex items-center justify-center bg-primary/10 overflow-hidden">
-                        <i class="ri-building-2-line text-primary text-xl"></i>
-                    </div>
-                    <h1 class="text-lg font-bold mr-2 text-gray-800">ניהול הזמנות</h1>
-                </div>
-                
-                <div class="flex items-center space-x-2 space-x-reverse">
-                    <div class="relative">
-                        <button id="userMenuBtn" class="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center">
-                            <i class="ri-user-line ri-lg text-gray-600"></i>
-                        </button>
-                        <div id="userMenu" class="absolute left-0 mt-2 w-48 bg-white rounded-lg shadow-lg py-1 hidden z-50 border border-gray-200">
-                            <div class="px-4 py-2 border-b border-gray-200">
-                                <p class="font-semibold text-gray-800" id="usernameDisplay"></p>
-                                <p class="text-sm text-gray-600">מנהל מערכת</p>
-                            </div>
-                            <button id="logoutBtn" class="block w-full text-right px-4 py-2 text-sm text-red-600 hover:bg-gray-100">התנתק</button>
-                        </div>
-                    </div>
-                </div>
+            <div class="glass p-4 text-center">
+                <h3 class="text-lg font-semibold text-gray-800">ממתינות</h3>
+                <p id="pendingOrders" class="text-2xl font-bold text-yellow-600">0</p>
             </div>
-        </nav>
-        
-        <!-- Main Content -->
-        <div class="pt-16 pb-20">
-            <!-- Warehouse Selection -->
-            <div class="px-4 py-3 bg-white shadow-sm">
-                <div class="flex justify-between items-center mb-3">
-                    <h2 class="text-lg font-bold text-gray-800">בחירת מחסן</h2>
-                    <button id="addOrderBtn" class="flex items-center justify-center bg-primary text-white px-4 py-2 rounded-button font-medium shadow-md hover:bg-primary/90 transition-all">
-                        <i class="ri-add-line mr-1"></i>
-                        הזמנה חדשה
-                    </button>
-                </div>
-                
-                <div class="grid grid-cols-2 gap-3 mb-2">
-                    <button id="warehouseHaharash" class="warehouse-btn flex items-center justify-center py-3 px-4 rounded-lg bg-blue-900 text-white font-medium shadow-md hover:shadow-lg transition-all">
-                        <i class="ri-store-2-line ri-lg mr-2"></i>
-                        מחסן החרש
-                    </button>
-                    
-                    <button id="warehouseTalmid" class="warehouse-btn flex items-center justify-center py-3 px-4 rounded-lg bg-blue-400 text-white font-medium shadow-md hover:shadow-lg transition-all">
-                        <i class="ri-store-2-line ri-lg mr-2"></i>
-                        מחסן התלמיד
-                    </button>
-                </div>
+            <div class="glass p-4 text-center">
+                <h3 class="text-lg font-semibold text-gray-800">בוצעו</h3>
+                <p id="completedOrders" class="text-2xl font-bold text-green-600">0</p>
             </div>
-            
-            <!-- Dashboard -->
-            <div class="p-4">
-                <div class="mb-6">
-                    <h2 class="text-lg font-bold text-gray-800 mb-3">לוח בקרה</h2>
-                    
-                    <div class="grid grid-cols-2 gap-3 mb-4">
-                        <div class="glassmorphism rounded-lg p-3 shadow-sm animate-fade-in">
-                            <div class="flex items-center justify-between">
-                                <div>
-                                    <p class="text-xs text-gray-500 mb-1">סה״כ הזמנות היום</p>
-                                    <p id="totalOrders" class="text-2xl font-bold text-primary">0</p>
-                                </div>
-                                <div class="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                                    <i class="ri-shopping-bag-line ri-lg text-primary"></i>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="glassmorphism rounded-lg p-3 shadow-sm animate-fade-in">
-                            <div class="flex items-center justify-between">
-                                <div>
-                                    <p class="text-xs text-gray-500 mb-1">הזמנות בביצוע</p>
-                                    <p id="inProgressOrders" class="text-2xl font-bold text-blue-500">0</p>
-                                </div>
-                                <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
-                                    <i class="ri-timer-line ri-lg text-blue-500"></i>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="glassmorphism rounded-lg p-3 shadow-sm animate-fade-in">
-                            <div class="flex items-center justify-between">
-                                <div>
-                                    <p class="text-xs text-gray-500 mb-1">הזמנות שהושלמו</p>
-                                    <p id="completedOrders" class="text-2xl font-bold text-green-500">0</p>
-                                </div>
-                                <div class="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
-                                    <i class="ri-checkbox-circle-line ri-lg text-green-500"></i>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="glassmorphism rounded-lg p-3 shadow-sm animate-fade-in">
-                            <div class="flex items-center justify-between">
-                                <div>
-                                    <p class="text-xs text-gray-500 mb-1">הזמנות בהמתנה</p>
-                                    <p id="pendingOrders" class="text-2xl font-bold text-yellow-500">0</p>
-                                </div>
-                                <div class="w-10 h-10 rounded-full bg-yellow-100 flex items-center justify-center">
-                                    <i class="ri-time-line ri-lg text-yellow-500"></i>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="glassmorphism rounded-lg p-3 shadow-sm mb-4">
-                        <h3 class="text-sm font-semibold text-gray-700 mb-2">נהגים פעילים</h3>
-                        <div class="flex space-x-2 space-x-reverse">
-                            <button id="driverChachmat" class="driver-btn flex items-center justify-center px-3 py-1.5 bg-blue-100 text-blue-800 rounded-full text-sm font-medium hover:bg-blue-200 transition-all">
-                                <i class="ri-user-line ri-sm ml-1"></i>
-                                חכמת
-                            </button>
-                            
-                            <button id="driverAli" class="driver-btn flex items-center justify-center px-3 py-1.5 bg-blue-100 text-blue-800 rounded-full text-sm font-medium hover:bg-blue-200 transition-all">
-                                <i class="ri-user-line ri-sm ml-1"></i>
-                                עלי
-                            </button>
-                        </div>
-                    </div>
-                    
-                    <!-- Charts -->
-                    <div class="grid grid-cols-1 gap-4 mb-4">
-                        <div class="glassmorphism rounded-lg p-3 shadow-sm">
-                            <h3 class="text-sm font-semibold text-gray-700 mb-2">התפלגות הזמנות</h3>
-                            <div id="ordersDistributionChart" class="h-48"></div>
-                        </div>
-                        
-                        <div class="glassmorphism rounded-lg p-3 shadow-sm">
-                            <h3 class="text-sm font-semibold text-gray-700 mb-2">עומס הזמנות לפי שעות</h3>
-                            <div id="ordersByHourChart" class="h-48"></div>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Orders Table -->
-                <div class="mb-4">
-                    <div class="flex justify-between items-center mb-3">
-                        <div class="flex items-center">
-                            <i class="ri-calendar-check-line ri-lg text-primary mr-2"></i>
-                            <h2 class="text-lg font-bold text-gray-800">הזמנות היום</h2>
-                        </div>
-                        
-                        <div class="flex items-center">
-                            <button id="refreshBtn" class="w-8 h-8 flex items-center justify-center bg-gray-100 rounded-full hover:bg-gray-200 transition-all">
-                                <i class="ri-refresh-line ri-lg text-gray-600"></i>
-                            </button>
-                            
-                            <button id="shareWhatsappBtn" class="flex items-center justify-center ml-2 bg-green-500 text-white px-3 py-1.5 rounded-button text-sm font-medium hover:bg-green-600 transition-all">
-                                <i class="ri-whatsapp-line ri-lg ml-1"></i>
-                                שתף דוח
-                            </button>
-                        </div>
-                    </div>
-                    
-                    <!-- Search and Filter -->
-                    <div class="mb-3">
-                        <div class="relative mb-2">
-                            <input id="searchInput" type="text" class="w-full pl-10 pr-4 py-2 rounded-button border border-gray-200 focus:border-primary focus:ring-1 focus:ring-primary" placeholder="חיפוש לפי לקוח, כתובת, מספר הזמנה...">
-                            <div class="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 flex items-center justify-center">
-                                <i class="ri-search-line ri-lg text-gray-400"></i>
-                            </div>
-                        </div>
-                        
-                        <div class="flex overflow-x-auto pb-2 space-x-2 space-x-reverse">
-                            <button data-filter="all" class="status-filter whitespace-nowrap px-3 py-1.5 bg-primary text-white rounded-full text-sm font-medium">הכל</button>
-                            <button data-filter="pending" class="status-filter whitespace-nowrap px-3 py-1.5 bg-gray-100 text-gray-800 rounded-full text-sm font-medium">בהמתנה</button>
-                            <button data-filter="inprogress" class="status-filter whitespace-nowrap px-3 py-1.5 bg-gray-100 text-gray-800 rounded-full text-sm font-medium">בביצוע</button>
-                            <button data-filter="completed" class="status-filter whitespace-nowrap px-3 py-1.5 bg-gray-100 text-gray-800 rounded-full text-sm font-medium">הושלם</button>
-                            <button data-filter="cancelled" class="status-filter whitespace-nowrap px-3 py-1.5 bg-gray-100 text-gray-800 rounded-full text-sm font-medium">בוטל</button>
-                        </div>
-                    </div>
-                    
-                    <!-- Orders Table -->
-                    <div class="bg-white rounded-lg shadow-sm overflow-hidden animate-slide-in">
-                        <div class="overflow-x-auto">
-                            <table class="min-w-full divide-y divide-gray-200">
-                                <thead class="bg-gray-50">
-                                    <tr>
-                                        <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">שעה</th>
-                                        <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">לקוח</th>
-                                        <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">כתובת</th>
-                                        <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">סטטוס</th>
-                                        <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">נהג</th>
-                                        <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">פעולות</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="ordersTableBody" class="bg-white divide-y divide-gray-200">
-                                    <tr class="animate-pulse">
-                                        <td colspan="6" class="px-4 py-10 text-center text-gray-500">
-                                            טוען נתונים...
-                                        </td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
+            <div class="glass p-4 text-center">
+                <h3 class="text-lg font-semibold text-gray-800">בוטלו</h3>
+                <p id="canceledOrders" class="text-2xl font-bold text-red-600">0</p>
             </div>
         </div>
-        
-        <!-- Bottom Navigation -->
-        <nav class="fixed bottom-0 w-full bg-white border-t border-gray-200 z-40">
-            <div class="grid grid-cols-5 h-16">
-                <button id="navToday" class="flex flex-col items-center justify-center space-y-1 hover:bg-gray-50 transition-all text-primary">
-                    <i class="ri-calendar-line ri-lg"></i>
-                    <span class="text-xs">היום</span>
-                </button>
-                
-                <button id="navSchedule" class="flex flex-col items-center justify-center space-y-1 hover:bg-gray-50 transition-all">
-                    <i class="ri-calendar-todo-line ri-lg text-gray-600"></i>
-                    <span class="text-xs text-gray-600">סידור</span>
-                </button>
-                
-                <button id="navDrivers" class="flex flex-col items-center justify-center space-y-1 hover:bg-gray-50 transition-all">
-                    <i class="ri-user-3-line ri-lg text-gray-600"></i>
-                    <span class="text-xs text-gray-600">נהגים</span>
-                </button>
-                
-                <button id="navTomorrow" class="flex flex-col items-center justify-center space-y-1 hover:bg-gray-50 transition-all">
-                    <i class="ri-calendar-2-line ri-lg text-gray-600"></i>
-                    <span class="text-xs text-gray-600">מחר</span>
-                </button>
-                
-                <button id="navHistory" class="flex flex-col items-center justify-center space-y-1 hover:bg-gray-50 transition-all">
-                    <i class="ri-history-line ri-lg text-gray-600"></i>
-                    <span class="text-xs text-gray-600">היסטוריה</span>
-                </button>
+
+        <!-- Search and Filters -->
+        <div class="flex flex-col sm:flex-row items-center mb-6 space-y-4 sm:space-y-0 sm:space-x-4 sm:space-x-reverse">
+            <input type="text" id="searchInput" class="w-full sm:w-1/3 p-3 glass border-none rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="חפש לפי מספר הזמנה, לקוח, כתובת...">
+            <select id="statusFilter" class="w-full sm:w-1/4 p-3 glass border-none rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                <option value="הכל">הכל</option>
+                <option value="ממתין">ממתין</option>
+                <option value="בטיפול">בטיפול</option>
+                <option value="הושלם">הושלם</option>
+                <option value="בוטל">בוטל</option>
+            </select>
+            <button onclick="shareMorningReport()" class="w-full sm:w-auto glass bg-indigo-600 text-white p-3 rounded-lg hover:bg-indigo-700 transition duration-300">📤 שתף דוח בוקר ב-WhatsApp</button>
+        </div>
+
+        <!-- Tabs -->
+        <div class="mb-6">
+            <ul class="flex border-b border-indigo-200">
+                <li class="mr-1">
+                    <a class="bg-transparent inline-block py-2 px-4 text-indigo-600 font-semibold border-b-2 border-indigo-600" href="#orders" onclick="showTab('orders')">הזמנות</a>
+                </li>
+                <li class="mr-1">
+                    <a class="bg-transparent inline-block py-2 px-4 text-gray-600 font-semibold" href="#drivers" onclick="showTab('drivers')">לוח נהגים</a>
+                </li>
+            </ul>
+        </div>
+
+        <!-- Loading Indicator -->
+        <div id="loading" class="loading">
+            <svg class="animate-spin h-8 w-8 text-indigo-600 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+        </div>
+        <div id="error" class="error text-center"></div>
+
+        <!-- Orders Table -->
+        <div id="orders" class="tab-content">
+            <button onclick="openOrderForm()" class="mb-6 glass bg-indigo-600 text-white p-3 rounded-lg hover:bg-indigo-700 blink transition duration-300">➕ הזמנה חדשה</button>
+            <div class="overflow-x-auto glass p-4">
+                <table id="ordersTable" class="w-full">
+                    <thead>
+                        <tr class="bg-indigo-100 bg-opacity-30 text-right text-sm">
+                            <th class="p-3">מספר הזמנה</th>
+                            <th class="p-3">תאריך</th>
+                            <th class="p-3">שעה</th>
+                            <th class="p-3">לקוח</th>
+                            <th class="p-3">כתובת</th>
+                            <th class="p-3">מחסן</th>
+                            <th class="p-3">סטטוס</th>
+                            <th class="p-3">נהג</th>
+                            <th class="p-3">סוג פעולה</th>
+                            <th class="p-3">זמן אספקה</th>
+                            <th class="p-3">הערות</th>
+                            <th class="p-3">תאריך יצירה</th>
+                            <th class="p-3">פעולות</th>
+                        </tr>
+                    </thead>
+                    <tbody id="ordersBody"></tbody>
+                </table>
             </div>
-        </nav>
-    </div>
-    
-    <!-- Add/Edit Order Modal -->
-    <div id="orderModal" class="fixed inset-0 z-50 hidden">
-        <div class="absolute inset-0 bg-black bg-opacity-50 backdrop-blur-sm"></div>
-        <div class="absolute inset-0 flex items-center justify-center p-4">
-            <div class="bg-white rounded-lg shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto">
-                <div class="flex justify-between items-center p-4 border-b">
-                    <h3 class="text-lg font-bold text-gray-800" id="modalTitle">הוספת הזמנה חדשה</h3>
-                    <button id="closeOrderModal" class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100">
-                        <i class="ri-close-line ri-lg text-gray-600"></i>
-                    </button>
-                </div>
-                
-                <div class="p-4 space-y-4">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">לקוח</label>
-                        <input id="orderCustomer" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-button focus:ring-primary focus:border-primary" placeholder="שם הלקוח">
+        </div>
+
+        <!-- Driver Schedule -->
+        <div id="drivers" class="tab-content hidden">
+            <div class="overflow-x-auto glass p-4">
+                <table id="driversTable" class="w-full">
+                    <thead>
+                        <tr class="bg-indigo-100 bg-opacity-30 text-right text-sm">
+                            <th class="p-3">נהג</th>
+                            <th class="p-3">מספר הזמנות</th>
+                            <th class="p-3">פרטי הזמנות</th>
+                        </tr>
+                    </thead>
+                    <tbody id="driversBody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Popup Form -->
+        <div id="orderFormModal" class="modal fixed inset-0 bg-gray-600 bg-opacity-50 items-center justify-center">
+            <div class="glass p-6 rounded-lg shadow-lg w-full max-w-lg modal-content">
+                <h2 id="formTitle" class="text-xl font-bold mb-4 text-indigo-800">הוסף הזמנה חדשה</h2>
+                <div id="formError" class="error"></div>
+                <form id="orderForm">
+                    <input type="hidden" id="orderId" name="orderId">
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700">מספר הזמנה</label>
+                        <input type="text" id="orderNumber" name="orderNumber" class="w-full p-2 glass border-none rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" required>
+                        <p id="orderNumberError" class="error text-sm hidden">מספר הזמנה כבר קיים</p>
                     </div>
-                    
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">כתובת</label>
-                        <input id="orderAddress" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-button focus:ring-primary focus:border-primary" placeholder="כתובת מלאה">
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700">תאריך</label>
+                        <input type="date" id="orderDate" name="date" class="w-full p-2 glass border-none rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" required>
                     </div>
-                    
-                    <div class="grid grid-cols-2 gap-3">
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">תאריך</label>
-                            <input id="orderDate" type="date" class="w-full px-3 py-2 border border-gray-300 rounded-button focus:ring-primary focus:border-primary">
-                        </div>
-                        
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">שעה</label>
-                            <input id="orderTime" type="time" class="w-full px-3 py-2 border border-gray-300 rounded-button focus:ring-primary focus:border-primary">
-                        </div>
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700">שעה</label>
+                        <input type="time" id="orderTime" name="time" class="w-full p-2 glass border-none rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" required>
                     </div>
-                    
-                    <div class="grid grid-cols-2 gap-3">
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">מחסן</label>
-                            <select id="orderWarehouse" class="w-full px-3 py-2 border border-gray-300 rounded-button focus:ring-primary focus:border-primary">
-                                <option value="החרש">מחסן החרש</option>
-                                <option value="התלמיד">מחסן התלמיד</option>
-                            </select>
-                        </div>
-                        
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">נהג</label>
-                            <select id="orderDriver" class="w-full px-3 py-2 border border-gray-300 rounded-button focus:ring-primary focus:border-primary">
-                                <option value="חכמת">חכמת</option>
-                                <option value="עלי">עלי</option>
-                            </select>
-                        </div>
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700">לקוח</label>
+                        <input type="text" id="customer" name="customer" class="w-full p-2 glass border-none rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" required>
                     </div>
-                    
-                    <div class="grid grid-cols-2 gap-3">
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">סטטוס</label>
-                            <select id="orderStatus" class="w-full px-3 py-2 border border-gray-300 rounded-button focus:ring-primary focus:border-primary">
-                                <option value="בהמתנה">בהמתנה</option>
-                                <option value="בביצוע">בביצוע</option>
-                                <option value="הושלם">הושלם</option>
-                                <option value="בוטל">בוטל</option>
-                            </select>
-                        </div>
-                        
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">סוג פעולה</label>
-                            <select id="orderAction" class="w-full px-3 py-2 border border-gray-300 rounded-button focus:ring-primary focus:border-primary">
-                                <option value="משלוח">משלוח</option>
-                                <option value="איסוף">איסוף</option>
-                                <option value="החזרה">החזרה</option>
-                            </select>
-                        </div>
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700">כתובת</label>
+                        <input type="text" id="address" name="address" class="w-full p-2 glass border-none rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" required>
                     </div>
-                    
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">זמן הגעה משוער (דקות)</label>
-                        <input id="orderEta" type="number" class="w-full px-3 py-2 border border-gray-300 rounded-button focus:ring-primary focus:border-primary" placeholder="30">
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700">מחסן</label>
+                        <select id="warehouse" name="warehouse" class="w-full p-2 glass border-none rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" required>
+                            <option value="החרש">החרש</option>
+                            <option value="התלמיד">התלמיד</option>
+                        </select>
                     </div>
-                    
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">הערות</label>
-                        <textarea id="orderNotes" class="w-full px-3 py-2 border border-gray-300 rounded-button focus:ring-primary focus:border-primary" rows="2" placeholder="הערות נוספות"></textarea>
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700">סטטוס</label>
+                        <select id="status" name="status" class="w-full p-2 glass border-none rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" required>
+                            <option value="ממתין">ממתין</option>
+                            <option value="בטיפול">בטיפול</option>
+                            <option value="הושלם">הושלם</option>
+                            <option value="בוטל">בוטל</option>
+                        </select>
                     </div>
-                    
-                    <input type="hidden" id="orderId">
-                </div>
-                
-                <div class="p-4 border-t flex justify-end space-x-2 space-x-reverse">
-                    <button id="cancelOrderBtn" class="bg-gray-200 text-gray-800 px-4 py-2 rounded-button font-medium hover:bg-gray-300 transition-all">
-                        ביטול
-                    </button>
-                    
-                    <button id="saveOrderBtn" class="bg-primary text-white px-4 py-2 rounded-button font-medium shadow-md hover:bg-primary/90 transition-all relative overflow-hidden">
-                        <span class="relative z-10">שמור הזמנה</span>
-                        <div class="absolute inset-0 shimmer"></div>
-                    </button>
-                </div>
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700">נהג</label>
+                        <input type="text" id="driver" name="driver" class="w-full p-2 glass border-none rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700">סוג פעולה</label>
+                        <input type="text" id="actionType" name="actionType" class="w-full p-2 glass border-none rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700">זמן אספקה (דקות)</label>
+                        <input type="number" id="deliveryTime" name="deliveryTime" class="w-full p-2 glass border-none rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" min="0">
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700">הערות</label>
+                        <textarea id="notes" name="notes" class="w-full p-2 glass border-none rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" rows="4"></textarea>
+                    </div>
+                    <div class="flex justify-end space-x-2 space-x-reverse">
+                        <button type="button" onclick="closeOrderForm()" class="glass bg-gray-500 text-white p-2 rounded-lg hover:bg-gray-600 transition duration-300">בטל</button>
+                        <button type="submit" class="glass bg-indigo-600 text-white p-2 rounded-lg hover:bg-indigo-700 transition duration-300">שמור</button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
-    
-    <!-- Order Details Modal -->
-    <div id="orderDetailsModal" class="fixed inset-0 z-50 hidden">
-        <div class="absolute inset-0 bg-black bg-opacity-50 backdrop-blur-sm"></div>
-        <div class="absolute inset-0 flex items-center justify-center p-4">
-            <div class="bg-white rounded-lg shadow-xl w-full max-w-md">
-                <div class="flex justify-between items-center p-4 border-b">
-                    <h3 class="text-lg font-bold text-gray-800">פרטי הזמנה</h3>
-                    <button id="closeDetailsModal" class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100">
-                        <i class="ri-close-line ri-lg text-gray-600"></i>
-                    </button>
-                </div>
-                
-                <div id="orderDetailsContent" class="p-4 space-y-3">
-                    <!-- Order details will be loaded here -->
-                </div>
-                <div class="bg-blue-500 text-white px-4 py-2 rounded-lg"-button font-medium shadow-md hover:bg-blue-600 transition-all">
-                        <i class="ri-navigation-line ri-lg ml-1"></i>
-                        Waze
-                    </button>
-                    
-                    <button id="editOrderBtn" class="bg-primary text-white px-4 py-2 rounded-button font-medium shadow-md hover:bg-primary/90 transition-all">
-                        <i class="ri-edit-line ri-lg ml-1"></i>
-                        ערוך
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Loading Spinner -->
-    <div id="loadingSpinner" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 hidden">
-        <div class="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
-    </div>
-    
+
     <script>
-      <script>
-    const scriptURL = "https://script.google.com/macros/s/AKfycby8Gxubf-h7TGE2ubnna0Gzms1luhy_GmSq7SnqiOaXvH-wWQtHT0HgssLycZJKjSMi/exec"; // החלף כאן
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxKzam_7HZOw_FdPwU-gqHr89-l-4f_oKiCj5YngCYxAxOQDlG6RxM5YWCwWmySlrGjUw/exec';
+        const WHATSAPP_NUMBER = '0508860896';
 
-    function getData() {
-      fetch(scriptURL, {
-        method: "POST",
-        body: JSON.stringify({ action: "getData" }),
-        headers: { "Content-Type": "application/json" }
-      })
-      .then(res => res.json())
-      .then(data => {
-        document.getElementById("output").textContent = data.map(row => row.join(" | ")).join("\n");
-      });
-    }
+        // Show loading indicator
+        function showLoading(show) {
+            document.getElementById('loading').style.display = show ? 'block' : 'none';
+            document.getElementById('error').style.display = 'none';
+        }
 
-    function addRow(e) {
-      e.preventDefault();
-      const name = document.getElementById("name").value;
-      const email = document.getElementById("email").value;
+        // Show error message with detailed logging
+        function showError(message) {
+            const errorDiv = document.getElementById('error');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+            console.error('Error displayed at', new Date().toLocaleTimeString('he-IL'), ':', message);
+        }
 
-      fetch(scriptURL, {
-        method: "POST",
-        body: JSON.stringify({ action: "addRow", name, email }),
-        headers: { "Content-Type": "application/json" }
-      })
-      .then(res => res.json())
-      .then(data => {
-        alert("שורה נוספה!");
-        document.getElementById("name").value = "";
-        document.getElementById("email").value = "";
-        getData();
-      });
-    }
-        // Global Variables
-        let allOrders = [];
-        let currentOrderId = null;
-        
-        // Initialize the application when DOM is loaded
-        document.addEventListener('DOMContentLoaded', function() {
-            // Check if user is already logged in
-            checkLoginStatus();
-            
-            // Initialize login functionality
-            initLogin();
-            
-            // Initialize warehouse selection
-            initWarehouseSelection();
-            
-            // Initialize driver filter
-            initDriverFilter();
-            
-            // Initialize status filter
-            initStatusFilter();
-            
-            // Initialize search functionality
-            initSearch();
-            
-            // Initialize bottom navigation
-            initBottomNav();
-            
-            // Initialize modals
-            initModals();
-            
-            // Load initial data
-            if (localStorage.getItem('isLoggedIn') === 'true') {
-                loadOrders();
-            }
-        });
-        
-        // Check if user is logged in
-        // טיפול בכפתור הכניסה
-document.getElementById('loginForm').addEventListener('submit', function(e) {
-  e.preventDefault();
-  
-  const username = document.getElementById('username').value;
-  const password = document.getElementById('password').value;
+        // Format date to DD-MM-YYYY
+        function formatDate(dateStr) {
+            if (!dateStr) return '-';
+            const date = new Date(dateStr);
+            if (isNaN(date)) return dateStr; // Return as-is if not a valid date
+            const day = String(date.getDate()).padStart(2, '0');
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const year = date.getFullYear();
+            return `${day}-${month}-${year}`;
+        }
 
-  // הצגת טוען
-  const btn = this.querySelector('button[type="submit"]');
-  btn.disabled = true;
-  btn.innerHTML = '<i class="animate-spin">⚙️</i> מתחבר...';
+        // Format time to HH:MM
+        function formatTime(timeStr) {
+            if (!timeStr) return '-';
+            const [hours, minutes] = timeStr.split(':');
+            return `${hours.padStart(2, '0')}:${minutes.padStart(2, '0')}`;
+        }
 
-  // שליחה לשרת
-  google.script.run
-    .withSuccessHandler(function(response) {
-      if (response.success) {
-        window.location.href = response.redirectUrl || '/';
-      } else {
-        alert(response.message || 'שגיאת התחברות');
-        btn.disabled = false;
-        btn.textContent = 'כניסה למערכת';
-      }
-    })
-    .withFailureHandler(function(error) {
-      console.error('Error:', error);
-      alert('שגיאה בחיבור לשרת');
-      btn.disabled = false;
-      btn.textContent = 'כניסה למערכת';
-    })
-    .validateUser({ username, password });
-});
-      function checkLoginStatus() {
-            const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
-            const loginScreen = document.getElementById('loginScreen');
-            const appContainer = document.getElementById('appContainer');
-            
-            if (isLoggedIn) {
-                loginScreen.classList.add('hidden');
-                appContainer.classList.remove('hidden');
-                document.getElementById('usernameDisplay').textContent = localStorage.getItem('username');
+        // Check Web App health
+        async function checkHealth() {
+            const url = `${SCRIPT_URL}?action=health`;
+            console.log('Fetching health check at', new Date().toLocaleTimeString('he-IL'), ':', url);
+            try {
+                const response = await fetch(url, { method: 'GET' });
+                if (!response.ok) {
+                    const text = await response.text();
+                    throw new Error(`שגיאת שרת: ${response.status} ${text.startsWith('<!DOCTYPE') ? '(התקבלה תגובת HTML, ייתכן שצריך להתחבר או שהגישה נדחתה)' : text}`);
+                }
+                const data = await response.json();
+                if (data.error) throw new Error(data.error);
+                console.log('Health check successful at', new Date().toLocaleTimeString('he-IL'), ':', data.message);
+            } catch (error) {
+                showError('שגיאה בחיבור לשרת: ' + error.message);
             }
         }
-        
-        // Initialize login functionality
-        function initLogin() {
-            const loginBtn = document.getElementById('loginBtn');
-            const usernameInput = document.getElementById('username');
-            const passwordInput = document.getElementById('password');
-            const logoutBtn = document.getElementById('logoutBtn');
-            const userMenuBtn = document.getElementById('userMenuBtn');
-            const userMenu = document.getElementById('userMenu');
-            
-            // Login button click
-            loginBtn.addEventListener('click', function() {
-                const username = usernameInput.value.trim();
-                const password = passwordInput.value.trim();
-                
-                if (!username || !password) {
-                    showError('אנא מלא את כל השדות');
-                    return;
+
+        // Fetch and display orders
+        async function fetchOrders(retryCount = 0) {
+            const url = `${SCRIPT_URL}?action=getOrdersWithCache`;
+            console.log('Fetching orders at', new Date().toLocaleTimeString('he-IL'), ':', url);
+            showLoading(true);
+            try {
+                const response = await fetch(url, { method: 'GET' });
+                if (!response.ok) {
+                    const text = await response.text();
+                    throw new Error(`שגיאה בטעינת ההזמנות: ${response.status} ${text.startsWith('<!DOCTYPE') ? '(התקבלה תגובת HTML, בדוק הרשאות או התחברות)' : text}`);
                 }
-                
-                // Show loading spinner
-                document.getElementById('loadingSpinner').classList.remove('hidden');
-                
-                // Call server-side validation
-                google.script.run
-                    .withSuccessHandler(function(response) {
-                        document.getElementById('loadingSpinner').classList.add('hidden');
-                        
-                        if (response.success) {
-                            // Login successful
-                            localStorage.setItem('isLoggedIn', 'true');
-                            localStorage.setItem('username', username);
-                            
-                            document.getElementById('loginScreen').classList.add('hidden');
-                            document.getElementById('appContainer').classList.remove('hidden');
-                            document.getElementById('usernameDisplay').textContent = username;
-                            
-                            // Load orders
-                            loadOrders();
-                        } else {
-                            // Login failed
-                            showError('שם משתמש או סיסמה לא נכונים');
-                        }
-                    })
-                    .withFailureHandler(function(error) {
-                        document.getElementById('loadingSpinner').classList.add('hidden');
-                        showError('שגיאה בהתחברות לשרת');
-                        console.error('Login error:', error);
-                    })
-                    .validateUser({ username, password });
-            });
-            
-            // Logout button click
-            logoutBtn.addEventListener('click', function() {
-                localStorage.removeItem('isLoggedIn');
-                localStorage.removeItem('username');
-                window.location.reload();
-            });
-            
-            // Toggle user menu
-            userMenuBtn.addEventListener('click', function() {
-                userMenu.classList.toggle('hidden');
-            });
-            
-            // Close user menu when clicking outside
-            document.addEventListener('click', function(event) {
-                if (!userMenuBtn.contains(event.target) && !userMenu.contains(event.target)) {
-                    userMenu.classList.add('hidden');
-                }
-            });
-        }
-        
-        // Initialize warehouse selection
-        function initWarehouseSelection() {
-            const warehouseHaharash = document.getElementById('warehouseHaharash');
-            const warehouseTalmid = document.getElementById('warehouseTalmid');
-            
-            // Set default warehouse
-            let currentWarehouse = localStorage.getItem('currentWarehouse') || 'החרש';
-            updateWarehouseUI(currentWarehouse);
-            
-            // Warehouse button clicks
-            warehouseHaharash.addEventListener('click', function() {
-                currentWarehouse = 'החרש';
-                localStorage.setItem('currentWarehouse', currentWarehouse);
-                updateWarehouseUI(currentWarehouse);
-                loadOrders();
-            });
-            
-            warehouseTalmid.addEventListener('click', function() {
-                currentWarehouse = 'התלמיד';
-                localStorage.setItem('currentWarehouse', currentWarehouse);
-                updateWarehouseUI(currentWarehouse);
-                loadOrders();
-            });
-            
-            // Update warehouse UI
-            function updateWarehouseUI(warehouse) {
-                if (warehouse === 'החרש') {
-                    warehouseHaharash.classList.add('bg-blue-900', 'text-white');
-                    warehouseHaharash.classList.remove('bg-gray-100', 'text-gray-800');
-                    
-                    warehouseTalmid.classList.add('bg-gray-100', 'text-gray-800');
-                    warehouseTalmid.classList.remove('bg-blue-400', 'text-white');
+                const data = await response.json();
+                if (data.error) throw new Error(data.error);
+                const orders = data;
+                renderOrders(orders);
+                updateKPIs(orders);
+                fetchDriverSchedule(orders);
+            } catch (error) {
+                console.error('Fetch orders error:', error);
+                if (retryCount < 3) {
+                    console.log(`Retrying fetchOrders (${retryCount + 1}/3) at`, new Date().toLocaleTimeString('he-IL'));
+                    setTimeout(() => fetchOrders(retryCount + 1), 5000);
                 } else {
-                    warehouseTalmid.classList.add('bg-blue-400', 'text-white');
-                    warehouseTalmid.classList.remove('bg-gray-100', 'text-gray-800');
-                    
-                    warehouseHaharash.classList.add('bg-gray-100', 'text-gray-800');
-                    warehouseHaharash.classList.remove('bg-blue-900', 'text-white');
+                    showError('שגיאה בטעינת ההזמנות: ' + error.message);
                 }
+            } finally {
+                showLoading(false);
             }
         }
-        
-        // Initialize driver filter
-        function initDriverFilter() {
-            const driverChachmat = document.getElementById('driverChachmat');
-            const driverAli = document.getElementById('driverAli');
-            
-            // Set default driver filter
-            let currentDriverFilter = localStorage.getItem('currentDriverFilter') || 'all';
-            updateDriverFilterUI(currentDriverFilter);
-            
-            // Driver button clicks
-            driverChachmat.addEventListener('click', function() {
-                if (currentDriverFilter === 'חכמת') {
-                    currentDriverFilter = 'all';
-                } else {
-                    currentDriverFilter = 'חכמת';
-                }
-                localStorage.setItem('currentDriverFilter', currentDriverFilter);
-                updateDriverFilterUI(currentDriverFilter);
-                filterOrders();
+
+        // Render orders with filters
+        function renderOrders(orders) {
+            const statusFilter = document.getElementById('statusFilter').value;
+            const search = document.getElementById('searchInput').value.toLowerCase();
+            const filteredOrders = orders.filter(order => {
+                const matchesStatus = statusFilter === 'הכל' || order['סטטוס'] === statusFilter;
+                const matchesSearch = order['מספר הזמנה'].toLowerCase().includes(search) ||
+                                     order['לקוח'].toLowerCase().includes(search) ||
+                                     order['כתובת'].toLowerCase().includes(search);
+                return matchesStatus && matchesSearch;
             });
-            
-            driverAli.addEventListener('click', function() {
-                if (currentDriverFilter === 'עלי') {
-                    currentDriverFilter = 'all';
-                } else {
-                    currentDriverFilter = 'עלי';
-                }
-                localStorage.setItem('currentDriverFilter', currentDriverFilter);
-                updateDriverFilterUI(currentDriverFilter);
-                filterOrders();
-            });
-            
-            // Update driver filter UI
-            function updateDriverFilterUI(driver) {
-                driverChachmat.classList.remove('bg-blue-500', 'text-white');
-                driverChachmat.classList.add('bg-blue-100', 'text-blue-800');
-                
-                driverAli.classList.remove('bg-blue-500', 'text-white');
-                driverAli.classList.add('bg-blue-100', 'text-blue-800');
-                
-                if (driver === 'חכמת') {
-                    driverChachmat.classList.remove('bg-blue-100', 'text-blue-800');
-                    driverChachmat.classList.add('bg-blue-500', 'text-white');
-                } else if (driver === 'עלי') {
-                    driverAli.classList.remove('bg-blue-100', 'text-blue-800');
-                    driverAli.classList.add('bg-blue-500', 'text-white');
-                }
-            }
-        }
-        
-        // Initialize status filter
-        function initStatusFilter() {
-            const statusFilters = document.querySelectorAll('.status-filter');
-            
-            // Set default status filter
-            let currentStatusFilter = localStorage.getItem('currentStatusFilter') || 'all';
-            updateStatusFilterUI(currentStatusFilter);
-            
-            // Status filter clicks
-            statusFilters.forEach(filter => {
-                filter.addEventListener('click', function() {
-                    const filterValue = this.getAttribute('data-filter');
-                    currentStatusFilter = filterValue;
-                    localStorage.setItem('currentStatusFilter', currentStatusFilter);
-                    updateStatusFilterUI(currentStatusFilter);
-                    filterOrders();
-                });
-            });
-            
-            // Update status filter UI
-            function updateStatusFilterUI(status) {
-                statusFilters.forEach(filter => {
-                    filter.classList.remove('bg-primary', 'text-white');
-                    filter.classList.add('bg-gray-100', 'text-gray-800');
-                    
-                    if (filter.getAttribute('data-filter') === status) {
-                        filter.classList.remove('bg-gray-100', 'text-gray-800');
-                        filter.classList.add('bg-primary', 'text-white');
-                    }
-                });
-            }
-        }
-        
-        // Initialize search functionality
-        function initSearch() {
-            const searchInput = document.getElementById('searchInput');
-            
-            searchInput.addEventListener('input', function() {
-                filterOrders();
+
+            const tbody = document.getElementById('ordersBody');
+            tbody.innerHTML = '';
+            filteredOrders.forEach(order => {
+                const row = document.createElement('tr');
+                row.className = 'table-row';
+                row.innerHTML = `
+                    <td class="p-3">${order['מספר הזמנה']}</td>
+                    <td class="p-3">${formatDate(order['תאריך'])}</td>
+                    <td class="p-3">${formatTime(order['שעה'])}</td>
+                    <td class="p-3">${order['לקוח']}</td>
+                    <td class="p-3">${order['כתובת']}</td>
+                    <td class="p-3">${order['מחסן']}</td>
+                    <td class="p-3 ${order['סטטוס'] === 'הושלם' ? 'text-green-600' : order['סטטוס'] === 'בטיפול' ? 'text-yellow-600' : order['סטטוס'] === 'בוטל' ? 'text-red-600' : 'text-orange-600'}">${order['סטטוס']}</td>
+                    <td class="p-3">${order['נהג'] || '-'}</td>
+                    <td class="p-3">${order['סוג פעולה'] || '-'}</td>
+                    <td class="p-3">${order['זמן אספקה (דקות)'] || '-'}</td>
+                    <td class="p-3">${order['הערות'] || '-'}</td>
+                    <td class="p-3">${formatDate(order['תאריך יצירה'])}</td>
+                    <td class="p-3">
+                        <button onclick="editOrder('${order['מספר הזמנה']}')" class="text-indigo-600 hover:text-indigo-800">ערוך</button>
+                        <button onclick="deleteOrder('${order['מספר הזמנה']}')" class="text-red-600 hover:text-red-800 mr-2">מחק</button>
+                    </td>
+                `;
+                tbody.appendChild(row);
             });
         }
-        
-        // Initialize bottom navigation
-        function initBottomNav() {
-            const navToday = document.getElementById('navToday');
-            const navSchedule = document.getElementById('navSchedule');
-            const navDrivers = document.getElementById('navDrivers');
-            const navTomorrow = document.getElementById('navTomorrow');
-            const navHistory = document.getElementById('navHistory');
-            
-            // Set default view
-            const viewMode = localStorage.getItem('viewMode') || 'today';
-            updateNavUI(viewMode);
-            
-            // Navigation clicks
-            navToday.addEventListener('click', function() {
-                localStorage.setItem('viewMode', 'today');
-                updateNavUI('today');
-                loadOrders();
-            });
-            
-            navSchedule.addEventListener('click', function() {
-                localStorage.setItem('viewMode', 'schedule');
-                updateNavUI('schedule');
-                loadOrders('schedule');
-            });
-            
-            navDrivers.addEventListener('click', function() {
-                localStorage.setItem('viewMode', 'drivers');
-                updateNavUI('drivers');
-                // Show drivers view
-            });
-            
-            navTomorrow.addEventListener('click', function() {
-                localStorage.setItem('viewMode', 'tomorrow');
-                updateNavUI('tomorrow');
-                loadOrders('tomorrow');
-            });
-            
-            navHistory.addEventListener('click', function() {
-                localStorage.setItem('viewMode', 'history');
-                updateNavUI('history');
-                loadOrders('history');
-            });
-            
-            // Update navigation UI
-            function updateNavUI(mode) {
-                // Reset all nav items
-                [navToday, navSchedule, navDrivers, navTomorrow, navHistory].forEach(nav => {
-                    nav.classList.remove('text-primary');
-                    const icon = nav.querySelector('i');
-                    icon.classList.remove('text-primary');
-                    const text = nav.querySelector('span');
-                    text.classList.remove('text-primary');
-                    text.classList.add('text-gray-600');
-                    icon.classList.add('text-gray-600');
-                });
-                
-                // Highlight active nav
-                let activeNav;
-                switch(mode) {
-                    case 'today':
-                        activeNav = navToday;
-                        break;
-                    case 'schedule':
-                        activeNav = navSchedule;
-                        break;
-                    case 'drivers':
-                        activeNav = navDrivers;
-                        break;
-                    case 'tomorrow':
-                        activeNav = navTomorrow;
-                        break;
-                    case 'history':
-                        activeNav = navHistory;
-                        break;
-                    default:
-                        activeNav = navToday;
-                }
-                
-                activeNav.classList.add('text-primary');
-                const icon = activeNav.querySelector('i');
-                icon.classList.add('text-primary');
-                const text = activeNav.querySelector('span');
-                text.classList.add('text-primary');
-                text.classList.remove('text-gray-600');
-                icon.classList.remove('text-gray-600');
-            }
+
+        // Update KPI metrics
+        function updateKPIs(orders) {
+            const totalOrders = orders.length;
+            const pendingOrders = orders.filter(order => order['סטטוס'] === 'ממתין').length;
+            const completedOrders = orders.filter(order => order['סטטוס'] === 'הושלם').length;
+            const canceledOrders = orders.filter(order => order['סטטוס'] === 'בוטל').length;
+
+            document.getElementById('totalOrders').textContent = totalOrders;
+            document.getElementById('pendingOrders').textContent = pendingOrders;
+            document.getElementById('completedOrders').textContent = completedOrders;
+            document.getElementById('canceledOrders').textContent = canceledOrders;
         }
-        
-        // Initialize modals
-        function initModals() {
-            const addOrderBtn = document.getElementById('addOrderBtn');
-            const orderModal = document.getElementById('orderModal');
-            const closeOrderModal = document.getElementById('closeOrderModal');
-            const cancelOrderBtn = document.getElementById('cancelOrderBtn');
-            const saveOrderBtn = document.getElementById('saveOrderBtn');
-            const orderDetailsModal = document.getElementById('orderDetailsModal');
-            const closeDetailsModal = document.getElementById('closeDetailsModal');
-            const editOrderBtn = document.getElementById('editOrderBtn');
-            const wazeBtn = document.getElementById('wazeBtn');
-            const refreshBtn = document.getElementById('refreshBtn');
-            const shareWhatsappBtn = document.getElementById('shareWhatsappBtn');
-            
-            // Add new order button click
-            addOrderBtn.addEventListener('click', function() {
-                document.getElementById('modalTitle').textContent = 'הוספת הזמנה חדשה';
-                resetOrderForm();
-                orderModal.classList.remove('hidden');
-            });
-            
-            // Close order modal
-            closeOrderModal.addEventListener('click', function() {
-                orderModal.classList.add('hidden');
-            });
-            
-            cancelOrderBtn.addEventListener('click', function() {
-                orderModal.classList.add('hidden');
-            });
-            
-            // Save order button click
-            saveOrderBtn.addEventListener('click', function() {
-                saveOrder();
-            });
-            
-            // Close details modal
-            closeDetailsModal.addEventListener('click', function() {
-                orderDetailsModal.classList.add('hidden');
-            });
-            
-            // Edit order button click
-            editOrderBtn.addEventListener('click', function() {
-                orderDetailsModal.classList.add('hidden');
-                editCurrentOrder();
-            });
-            
-            // Waze button click
-            wazeBtn.addEventListener('click', function() {
-                const order = allOrders.find(o => o.id == currentOrderId);
-                if (order && order.address) {
-                    const wazeUrl = `https://waze.com/ul?q=${encodeURIComponent(order.address)}&navigate=yes`;
-                    window.open(wazeUrl, '_blank');
-                }
-            });
-            
-            // Refresh button click
-            refreshBtn.addEventListener('click', function() {
-                loadOrders();
-            });
-            
-            // Share WhatsApp report button click
-            shareWhatsappBtn.addEventListener('click', function() {
-                shareWhatsAppReport();
-            });
-        }
-        
-        // Load orders from server
-        function loadOrders(viewMode) {
-            const ordersTableBody = document.getElementById('ordersTableBody');
-            
-            // Show loading state
-            ordersTableBody.innerHTML = '<tr class="animate-pulse"><td colspan="6" class="px-4 py-10 text-center text-gray-500">טוען נתונים...</td></tr>';
-            
-            // Call server to get orders
-            google.script.run
-                .withSuccessHandler(function(orders) {
-                    allOrders = orders;
-                    renderOrders(viewMode);
-                })
-                .withFailureHandler(function(error) {
-                    ordersTableBody.innerHTML = '<tr><td colspan="6" class="px-4 py-10 text-center text-red-500">שגיאה בטעינת הנתונים</td></tr>';
-                    console.error('Error loading orders:', error);
-                })
-                .getOrdersWithCache();
-        }
-        
-        // Render orders based on filters
-        function renderOrders(viewMode) {
-            const ordersTableBody = document.getElementById('ordersTableBody');
-            const currentWarehouse = localStorage.getItem('currentWarehouse') || 'החרש';
-            
-            // Filter orders based on view mode
-            let filteredOrders = [];
-            const today = new Date().toLocaleDateString('he-IL');
-            
-            switch(viewMode) {
-                case 'schedule':
-                    // Future orders
-                    filteredOrders = allOrders.filter(order => {
-                        const orderDate = new Date(order.date).toLocaleDateString('he-IL');
-                        return orderDate >= today;
-                    });
-                    break;
-                    
-                case 'tomorrow':
-                    // Tomorrow's orders
-                    const tomorrow = new Date();
-                    tomorrow.setDate(tomorrow.getDate() + 1);
-                    const tomorrowStr = tomorrow.toLocaleDateString('he-IL');
-                    
-                    filteredOrders = allOrders.filter(order => {
-                        const orderDate = new Date(order.date).toLocaleDateString('he-IL');
-                        return orderDate === tomorrowStr;
-                    });
-                    break;
-                    
-                case 'history':
-                    // Past orders
-                    filteredOrders = allOrders.filter(order => {
-                        const orderDate = new Date(order.date).toLocaleDateString('he-IL');
-                        return orderDate < today;
-                    });
-                    break;
-                    
-                default:
-                    // Today's orders (default)
-                    filteredOrders = allOrders.filter(order => {
-                        const orderDate = new Date(order.date).toLocaleDateString('he-IL');
-                        return orderDate === today;
-                    });
-            }
-            
-            // Filter by warehouse
-            filteredOrders = filteredOrders.filter(order => order.warehouse === currentWarehouse);
-            
-            // Apply driver filter if set
-            const currentDriverFilter = localStorage.getItem('currentDriverFilter');
-            if (currentDriverFilter && currentDriverFilter !== 'all') {
-                filteredOrders = filteredOrders.filter(order => order.driver === currentDriverFilter);
-            }
-            
-            // Apply status filter if set
-            const currentStatusFilter = localStorage.getItem('currentStatusFilter');
-            if (currentStatusFilter && currentStatusFilter !== 'all') {
-                const statusMap = {
-                    'pending': 'בהמתנה',
-                    'inprogress': 'בביצוע',
-                    'completed': 'הושלם',
-                    'cancelled': 'בוטל'
-                };
-                filteredOrders = filteredOrders.filter(order => order.status === statusMap[currentStatusFilter]);
-            }
-            
-            // Apply search filter if set
-            const searchTerm = document.getElementById('searchInput').value.trim().toLowerCase();
-            if (searchTerm) {
-                filteredOrders = filteredOrders.filter(order =>
-                    (order.customer && order.customer.toLowerCase().includes(searchTerm)) ||
-                    (order.address && order.address.toLowerCase().includes(searchTerm)) ||
-                    (order.orderNumber && order.orderNumber.toLowerCase().includes(searchTerm))
-                );
-            }
-            
-            // Sort by time
-            filteredOrders.sort((a, b) => {
-                const timeA = a.time || '00:00';
-                const timeB = b.time || '00:00';
-                return timeA.localeCompare(timeB);
-            });
-            
-            // Update table
-            if (filteredOrders.length === 0) {
-                ordersTableBody.innerHTML = '<tr><td colspan="6" class="px-4 py-10 text-center text-gray-500">אין הזמנות להצגה</td></tr>';
-            } else {
-                ordersTableBody.innerHTML = '';
-                
-                filteredOrders.forEach(order => {
-                    const row = document.createElement('tr');
-                    row.className = 'hover:bg-gray-50 cursor-pointer';
-                    row.setAttribute('data-id', order.id);
-                    
-                    // Get status class
-                    let statusClass = '';
-                    switch(order.status) {
-                        case 'הושלם':
-                            statusClass = 'status-completed';
-                            break;
-                        case 'בהמתנה':
-                            statusClass = 'status-pending';
-                            break;
-                        case 'בוטל':
-                            statusClass = 'status-cancelled';
-                            break;
-                        case 'בביצוע':
-                            statusClass = 'status-inprogress';
-                            break;
-                        default:
-                            statusClass = 'bg-gray-100 text-gray-800';
-                    }
-                    
-                    row.innerHTML = `
-                        <td class="px-4 py-3 whitespace-nowrap">${order.time || '—'}</td>
-                        <td class="px-4 py-3">${order.customer || '—'}</td>
-                        <td class="px-4 py-3">${order.address || '—'}</td>
-                        <td class="px-4 py-3">
-                            <span class="status-badge ${statusClass}">${order.status || '—'}</span>
-                        </td>
-                        <td class="px-4 py-3">${order.driver || '—'}</td>
-                        <td class="px-4 py-3 text-right">
-                            <button class="view-order-btn w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100">
-                                <i class="ri-eye-line ri-lg text-gray-600"></i>
-                            </button>
-                        </td>
-                    `;
-                    
-                    ordersTableBody.appendChild(row);
-                });
-                
-                // Add event listeners to view buttons
-                document.querySelectorAll('.view-order-btn').forEach(btn => {
-                    btn.addEventListener('click', function(e) {
-                        e.stopPropagation();
-                        const orderId = this.closest('tr').getAttribute('data-id');
-                        viewOrderDetails(orderId);
-                    });
-                });
-                
-                // Add event listeners to rows
-                document.querySelectorAll('#ordersTableBody tr').forEach(row => {
-                    row.addEventListener('click', function() {
-                        const orderId = this.getAttribute('data-id');
-                        viewOrderDetails(orderId);
-                    });
-                });
-            }
-            
-            // Update dashboard
-            updateDashboard(filteredOrders);
-        }
-        
-        // Filter orders (wrapper for renderOrders)
-        function filterOrders() {
-            renderOrders(localStorage.getItem('viewMode') || 'today');
-        }
-        
-        // Update dashboard stats and charts
-        function updateDashboard(orders) {
-            // Update order counts
-            document.getElementById('totalOrders').textContent = orders.length;
-            document.getElementById('completedOrders').textContent = orders.filter(order => order.status === 'הושלם').length;
-            document.getElementById('inProgressOrders').textContent = orders.filter(order => order.status === 'בביצוע').length;
-            document.getElementById('pendingOrders').textContent = orders.filter(order => order.status === 'בהמתנה').length;
-            
-            // Update charts
-            updateOrdersDistributionChart(orders);
-            updateOrdersByHourChart(orders);
-        }
-        
-        // Update orders distribution chart
-        function updateOrdersDistributionChart(orders) {
-            const chartContainer = document.getElementById('ordersDistributionChart');
-            const chart = echarts.init(chartContainer);
-            
-            // Count orders by status
-            const completed = orders.filter(order => order.status === 'הושלם').length;
-            const inProgress = orders.filter(order => order.status === 'בביצוע').length;
-            const pending = orders.filter(order => order.status === 'בהמתנה').length;
-            const cancelled = orders.filter(order => order.status === 'בוטל').length;
-            
-            const option = {
-                tooltip: {
-                    trigger: 'item',
-                    formatter: '{b}: {c} ({d}%)'
-                },
-                legend: {
-                    orient: 'horizontal',
-                    bottom: 0,
-                    data: ['הושלם', 'בביצוע', 'בהמתנה', 'בוטל']
-                },
-                series: [
-                    {
-                        type: 'pie',
-                        radius: ['40%', '70%'],
-                        avoidLabelOverlap: false,
-                        itemStyle: {
-                            borderRadius: 10,
-                            borderColor: '#fff',
-                            borderWidth: 2
-                        },
-                        label: {
-                            show: false,
-                            position: 'center'
-                        },
-                        emphasis: {
-                            label: {
-                                show: true,
-                                fontSize: '18',
-                                fontWeight: 'bold'
-                            }
-                        },
-                        labelLine: {
-                            show: false
-                        },
-                        data: [
-                            { value: completed, name: 'הושלם', itemStyle: { color: '#22c55e' } },
-                            { value: inProgress, name: 'בביצוע', itemStyle: { color: '#3b82f6' } },
-                            { value: pending, name: 'בהמתנה', itemStyle: { color: '#eab308' } },
-                            { value: cancelled, name: 'בוטל', itemStyle: { color: '#ef4444' } }
-                        ]
-                    }
-                ]
-            };
-            
-            chart.setOption(option);
-            
-            // Resize chart on window resize
-            window.addEventListener('resize', function() {
-                chart.resize();
-            });
-        }
-        
-        // Update orders by hour chart
-        function updateOrdersByHourChart(orders) {
-            const chartContainer = document.getElementById('ordersByHourChart');
-            const chart = echarts.init(chartContainer);
-            
-            // Group orders by hour
-            const hourCounts = {};
-            for (let i = 8; i <= 18; i++) {
-                hourCounts[i] = 0;
-            }
-            
+
+        // Fetch and display driver schedule
+        function fetchDriverSchedule(orders) {
+            const drivers = {};
             orders.forEach(order => {
-                if (order.time) {
-                    const hour = parseInt(order.time.split(':')[0]);
-                    if (hourCounts[hour] !== undefined) {
-                        hourCounts[hour]++;
-                    }
+                const driver = order['נהג'];
+                if (driver && driver !== '-') {
+                    if (!drivers[driver]) drivers[driver] = [];
+                    drivers[driver].push(order);
                 }
             });
-            
-            const hours = Object.keys(hourCounts);
-            const counts = Object.values(hourCounts);
-            
-            const option = {
-                tooltip: {
-                    trigger: 'axis',
-                    axisPointer: {
-                        type: 'shadow'
-                    }
-                },
-                grid: {
-                    left: '3%',
-                    right: '4%',
-                    bottom: '3%',
-                    containLabel: true
-                },
-                xAxis: [
-                    {
-                        type: 'category',
-                        data: hours.map(h => h + ':00'),
-                        axisTick: {
-                            alignWithLabel: true
-                        }
-                    }
-                ],
-                yAxis: [
-                    {
-                        type: 'value'
-                    }
-                ],
-                series: [
-                    {
-                        name: 'הזמנות',
-                        type: 'bar',
-                        barWidth: '60%',
-                        data: counts,
-                        itemStyle: {
-                            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-                                { offset: 0, color: '#3b82f6' },
-                                { offset: 1, color: '#0ea5e9' }
-                            ])
-                        }
-                    }
-                ]
-            };
-            
-            chart.setOption(option);
-            
-            // Resize chart on window resize
-            window.addEventListener('resize', function() {
-                chart.resize();
-            });
-        }
-        
-        // View order details
-        function viewOrderDetails(orderId) {
-            const order = allOrders.find(o => o.id == orderId);
-            if (!order) return;
-            
-            currentOrderId = orderId;
-            const orderDetailsModal = document.getElementById('orderDetailsModal');
-            const orderDetailsContent = document.getElementById('orderDetailsContent');
-            
-            // Get status class
-            let statusClass = '';
-            switch(order.status) {
-                case 'הושלם':
-                    statusClass = 'bg-green-100 text-green-800';
-                    break;
-                case 'בהמתנה':
-                    statusClass = 'bg-yellow-100 text-yellow-800';
-                    break;
-                case 'בוטל':
-                    statusClass = 'bg-red-100 text-red-800';
-                    break;
-                case 'בביצוע':
-                    statusClass = 'bg-blue-100 text-blue-800';
-                    break;
-                default:
-                    statusClass = 'bg-gray-100 text-gray-800';
+            const tbody = document.getElementById('driversBody');
+            tbody.innerHTML = '';
+            for (const driver in drivers) {
+                const row = document.createElement('tr');
+                row.className = 'table-row';
+                const ordersList = drivers[driver].map(o => `הזמנה ${o['מספר הזמנה']} (${o['לקוח']}, ${o['כתובת']}, ${o['סטטוס']})`).join('<br>');
+                row.innerHTML = `
+                    <td class="p-3">${driver}</td>
+                    <td class="p-3">${drivers[driver].length}</td>
+                    <td class="p-3">${ordersList}</td>
+                `;
+                tbody.appendChild(row);
             }
-            
-            // Format date
-            const dateObj = new Date(order.date);
-            const formattedDate = dateObj.toLocaleDateString('he-IL', {
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric'
-            });
-            
-            orderDetailsContent.innerHTML = `
-                <div class="flex justify-between items-start">
-                    <div>
-                        <h4 class="text-lg font-bold text-gray-900">${order.customer || '—'}</h4>
-                        <p class="text-sm text-gray-600">${formattedDate} | ${order.time || '—'}</p>
-                    </div>
-                    <span class="px-3 py-1 rounded-full text-sm font-medium ${statusClass}">${order.status || '—'}</span>
-                </div>
-                
-                <div class="mt-4 space-y-3">
-                    <div class="flex">
-                        <div class="w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 ml-3">
-                            <i class="ri-map-pin-line ri-lg text-gray-600"></i>
-                        </div>
-                        <div>
-                            <p class="text-sm font-medium text-gray-900">כתובת</p>
-                            <p class="text-sm text-gray-600">${order.address || '—'}</p>
-                        </div>
-                    </div>
-                    
-                    <div class="flex">
-                        <div class="w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 ml-3">
-                            <i class="ri-store-line ri-lg text-gray-600"></i>
-                        </div>
-                        <div>
-                            <p class="text-sm font-medium text-gray-900">מחסן</p>
-                            <p class="text-sm text-gray-600">מחסן ${order.warehouse || '—'}</p>
-                        </div>
-                    </div>
-                    
-                    <div class="flex">
-                        <div class="w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 ml-3">
-                            <i class="ri-user-line ri-lg text-gray-600"></i>
-                        </div>
-                        <div>
-                            <p class="text-sm font-medium text-gray-900">נהג</p>
-                            <p class="text-sm text-gray-600">${order.driver || '—'}</p>
-                        </div>
-                    </div>
-                    
-                    <div class="flex">
-                        <div class="w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 ml-3">
-                            <i class="ri-time-line ri-lg text-gray-600"></i>
-                        </div>
-                        <div>
-                            <p class="text-sm font-medium text-gray-900">זמן הגעה משוער</p>
-                            <p class="text-sm text-gray-600">${order.eta || '—'} דקות</p>
-                        </div>
-                    </div>
-                    
-                    <div class="flex">
-                        <div class="w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 ml-3">
-                            <i class="ri-file-list-line ri-lg text-gray-600"></i>
-                        </div>
-                        <div>
-                            <p class="text-sm font-medium text-gray-900">מספר הזמנה</p>
-                            <p class="text-sm text-gray-600">${order.orderNumber || '—'}</p>
-                        </div>
-                    </div>
-                    
-                    ${order.notes ? `
-                    <div class="flex">
-                        <div class="w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 ml-3">
-                            <i class="ri-sticky-note-line ri-lg text-gray-600"></i>
-                        </div>
-                        <div>
-                            <p class="text-sm font-medium text-gray-900">הערות</p>
-                            <p class="text-sm text-gray-600">${order.notes}</p>
-                        </div>
-                    </div>
-                    ` : ''}
-                </div>
-            `;
-            
-            // Show modal
-            orderDetailsModal.classList.remove('hidden');
         }
-        
-        // Edit current order
-        function editCurrentOrder() {
-            const order = allOrders.find(o => o.id == currentOrderId);
-            if (!order) return;
-            
-            document.getElementById('modalTitle').textContent = 'עריכת הזמנה';
-            
-            // Fill form with order data
-            document.getElementById('orderCustomer').value = order.customer || '';
-            document.getElementById('orderAddress').value = order.address || '';
-            document.getElementById('orderDate').value = order.date || '';
-            document.getElementById('orderTime').value = order.time || '';
-            document.getElementById('orderWarehouse').value = order.warehouse || 'החרש';
-            document.getElementById('orderDriver').value = order.driver || 'חכמת';
-            document.getElementById('orderStatus').value = order.status || 'בהמתנה';
-            document.getElementById('orderAction').value = order.action || 'משלוח';
-            document.getElementById('orderEta').value = order.eta || '';
-            document.getElementById('orderNotes').value = order.notes || '';
-            document.getElementById('orderId').value = order.id;
-            
-            // Show modal
-            document.getElementById('orderModal').classList.remove('hidden');
+
+        // Search and filter functionality
+        let allOrders = [];
+        document.getElementById('searchInput').addEventListener('input', () => renderOrders(allOrders));
+        document.getElementById('statusFilter').addEventListener('change', () => renderOrders(allOrders));
+
+        // Show tab
+        function showTab(tab) {
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.add('hidden'));
+            document.getElementById(tab).classList.remove('hidden');
+            document.querySelectorAll('a[href^="#"]').forEach(link => link.classList.remove('border-b-2', 'border-indigo-600', 'text-indigo-600'));
+            document.querySelector(`a[href="#${tab}"]`).classList.add('border-b-2', 'border-indigo-600', 'text-indigo-600');
         }
-        
-        // Reset order form
-        function resetOrderForm() {
-            document.getElementById('orderCustomer').value = '';
-            document.getElementById('orderAddress').value = '';
-            
-            // Set default date to today
-            const today = new Date();
-            const year = today.getFullYear();
-            const month = String(today.getMonth() + 1).padStart(2, '0');
-            const day = String(today.getDate()).padStart(2, '0');
-            document.getElementById('orderDate').value = `${year}-${month}-${day}`;
-            
-            // Set default time to current time rounded to nearest 15 min
-            const hours = String(today.getHours()).padStart(2, '0');
-            const minutes = String(Math.round(today.getMinutes() / 15) * 15).padStart(2, '0');
-            document.getElementById('orderTime').value = `${hours}:${minutes}`;
-            
-            // Set default warehouse
-            document.getElementById('orderWarehouse').value = localStorage.getItem('currentWarehouse') || 'החרש';
-            
-            // Reset other fields
-            document.getElementById('orderDriver').value = 'חכמת';
-            document.getElementById('orderStatus').value = 'בהמתנה';
-            document.getElementById('orderAction').value = 'משלוח';
-            document.getElementById('orderEta').value = '30';
-            document.getElementById('orderNotes').value = '';
-            document.getElementById('orderId').value = '';
+
+        // Open form
+        function openOrderForm(order = null) {
+            document.getElementById('orderFormModal').classList.add('show');
+            document.getElementById('formTitle').textContent = order ? 'ערוך הזמנה' : 'הוסף הזמנה חדשה';
+            document.getElementById('orderForm').reset();
+            document.getElementById('orderId').value = order ? order['מספר הזמנה'] : '';
+            document.getElementById('orderNumberError').classList.add('hidden');
+            document.getElementById('formError').style.display = 'none';
+            if (order) {
+                document.getElementById('orderNumber').value = order['מספר הזמנה'];
+                document.getElementById('orderNumber').disabled = true;
+                document.getElementById('orderDate').value = order['תאריך'];
+                document.getElementById('orderTime').value = order['שעה'];
+                document.getElementById('customer').value = order['לקוח'];
+                document.getElementById('address').value = order['כתובת'];
+                document.getElementById('warehouse').value = order['מחסן'];
+                document.getElementById('status').value = order['סטטוס'];
+                document.getElementById('driver').value = order['נהג'] || '';
+                document.getElementById('actionType').value = order['סוג פעולה'] || '';
+                document.getElementById('deliveryTime').value = order['זמן אספקה (דקות)'] || '';
+                document.getElementById('notes').value = order['הערות'] || '';
+            } else {
+                document.getElementById('orderNumber').disabled = false;
+            }
         }
-        
-        // Save order (new or edit)
-        function saveOrder() {
-            const orderId = document.getElementById('orderId').value;
-            const customer = document.getElementById('orderCustomer').value.trim();
-            const address = document.getElementById('orderAddress').value.trim();
-            
-            if (!customer || !address) {
-                showError('אנא מלא את כל השדות החובה');
+
+        // Close form
+        function closeOrderForm() {
+            document.getElementById('orderFormModal').classList.remove('show');
+        }
+
+        // Check if order number exists
+        async function checkOrderNumber(orderNumber, isEdit = false) {
+            const url = `${SCRIPT_URL}?action=getOrdersWithCache`;
+            console.log('Checking order number at', new Date().toLocaleTimeString('he-IL'), ':', url, orderNumber);
+            try {
+                const response = await fetch(url);
+                if (!response.ok) {
+                    const text = await response.text();
+                    throw new Error(`שגיאה בבדיקת מספר הזמנה: ${response.status} ${text.startsWith('<!DOCTYPE') ? '(התקבלה תגובת HTML)' : text}`);
+                }
+                const data = await response.json();
+                if (data.error) throw new Error(data.error);
+                return data.some(order => order['מספר הזמנה'] === orderNumber && (!isEdit || order['מספר הזמנה'] !== document.getElementById('orderId').value));
+            } catch (error) {
+                showError(error.message);
+                return false;
+            }
+        }
+
+        // Edit order
+        async function editOrder(orderNumber, retryCount = 0) {
+            const url = `${SCRIPT_URL}?action=getOrder&orderNumber=${orderNumber}`;
+            console.log('Editing order at', new Date().toLocaleTimeString('he-IL'), ':', url);
+            showLoading(true);
+            try {
+                const response = await fetch(url);
+                if (!response.ok) {
+                    const text = await response.text();
+                    throw new Error(`שגיאה בטעינת ההזמנה: ${response.status} ${text.startsWith('<!DOCTYPE') ? '(התקבלה תגובת HTML)' : text}`);
+                }
+                const data = await response.json();
+                if (data.error) throw new Error(data.error);
+                openOrderForm(data);
+            } catch (error) {
+                console.error('Edit order error:', error);
+                if (retryCount < 3) {
+                    console.log(`Retrying editOrder (${retryCount + 1}/3) at`, new Date().toLocaleTimeString('he-IL'));
+                    setTimeout(() => editOrder(orderNumber, retryCount + 1), 5000);
+                } else {
+                    showError(error.message);
+                }
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        // Delete order
+        async function deleteOrder(orderNumber, retryCount = 0) {
+            if (confirm('האם למחוק את ההזמנה?')) {
+                console.log('Deleting order at', new Date().toLocaleTimeString('he-IL'), ':', orderNumber);
+                showLoading(true);
+                try {
+                    const response = await fetch(SCRIPT_URL, {
+                        method: 'POST',
+                        body: JSON.stringify({ action: 'deleteOrder', orderNumber })
+                    });
+                    if (!response.ok) {
+                        const text = await response.text();
+                        throw new Error(`שגיאה במחיקת ההזמנה: ${response.status} ${text.startsWith('<!DOCTYPE') ? '(התקבלה תגובת HTML)' : text}`);
+                    }
+                    const data = await response.json();
+                    if (data.error) throw new Error(data.error);
+                    fetchOrders();
+                } catch (error) {
+                    console.error('Delete order error:', error);
+                    if (retryCount < 3) {
+                        console.log(`Retrying deleteOrder (${retryCount + 1}/3) at`, new Date().toLocaleTimeString('he-IL'));
+                        setTimeout(() => deleteOrder(orderNumber, retryCount + 1), 5000);
+                    } else {
+                        showError(error.message);
+                    }
+                } finally {
+                    showLoading(false);
+                }
+            }
+        }
+
+        // Form submission
+        document.getElementById('orderForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const orderNumber = document.getElementById('orderNumber').value;
+            const isEdit = !!document.getElementById('orderId').value;
+            console.log('Submitting form at', new Date().toLocaleTimeString('he-IL'), ':', { orderNumber, isEdit });
+            if (!isEdit && await checkOrderNumber(orderNumber)) {
+                document.getElementById('orderNumberError').classList.remove('hidden');
                 return;
             }
-            
-            const orderData = {
-                id: orderId || Date.now().toString(),
-                customer: customer,
-                address: address,
-                date: document.getElementById('orderDate').value,
-                time: document.getElementById('orderTime').value,
-                warehouse: document.getElementById('orderWarehouse').value,
-                driver: document.getElementById('orderDriver').value,
-                status: document.getElementById('orderStatus').value,
-                action: document.getElementById('orderAction').value,
-                eta: document.getElementById('orderEta').value,
-                notes: document.getElementById('orderNotes').value
-            };
-            
-            // Show loading spinner
-            document.getElementById('loadingSpinner').classList.remove('hidden');
-            
-            // Call server to save order
-            google.script.run
-                .withSuccessHandler(function(response) {
-                    document.getElementById('loadingSpinner').classList.add('hidden');
-                    
-                    if (response.success) {
-                        // Close modal
-                        document.getElementById('orderModal').classList.add('hidden');
-                        
-                        // Show success message
-                        showNotification(orderId ? 'הזמנה עודכנה בהצלחה' : 'הזמנה נוספה בהצלחה');
-                        
-                        // Reload orders
-                        loadOrders();
-                    } else {
-                        showError('שגיאה בשמירת ההזמנה');
-                    }
-                })
-                .withFailureHandler(function(error) {
-                    document.getElementById('loadingSpinner').classList.add('hidden');
-                    showError('שגיאה בשמירת ההזמנה');
-                    console.error('Save order error:', error);
-                })
-                .saveOrder(orderData);
+            document.getElementById('formError').style.display = 'none';
+            showLoading(true);
+            try {
+                const order = {
+                    action: isEdit ? 'updateOrder' : 'addNewOrder',
+                    orderNumber,
+                    date: document.getElementById('orderDate').value,
+                    time: document.getElementById('orderTime').value,
+                    customer: document.getElementById('customer').value,
+                    address: document.getElementById('address').value,
+                    warehouse: document.getElementById('warehouse').value,
+                    status: document.getElementById('status').value,
+                    driver: document.getElementById('driver').value,
+                    actionType: document.getElementById('actionType').value,
+                    deliveryTime: document.getElementById('deliveryTime').value,
+                    notes: document.getElementById('notes').value,
+                    creationDate: isEdit ? document.getElementById('orderId').value : new Date().toISOString().split('T')[0]
+                };
+                console.log('Sending order at', new Date().toLocaleTimeString('he-IL'), ':', order);
+                const response = await fetch(SCRIPT_URL, {
+                    method: 'POST',
+                    body: JSON.stringify(order)
+                });
+                if (!response.ok) {
+                    const text = await response.text();
+                    throw new Error(`שגיאה בשמירת ההזמנה: ${response.status} ${text.startsWith('<!DOCTYPE') ? '(התקבלה תגובת HTML)' : text}`);
+                }
+                const data = await response.json();
+                if (data.error) throw new Error(data.error);
+                closeOrderForm();
+                fetchOrders();
+            } catch (error) {
+                console.error('Form submission error at', new Date().toLocaleTimeString('he-IL'), ':', error);
+                document.getElementById('formError').textContent = error.message;
+                document.getElementById('formError').style.display = 'block';
+            } finally {
+                showLoading(false);
+            }
+        });
+
+        // Share morning report
+        async function shareMorningReport() {
+            const url = `${SCRIPT_URL}?action=generateMorningReport`;
+            console.log('Generating morning report at', new Date().toLocaleTimeString('he-IL'), ':', url);
+            showLoading(true);
+            try {
+                const response = await fetch(url);
+                if (!response.ok) {
+                    const text = await response.text();
+                    throw new Error(`שגיאה ביצירת הדוח: ${response.status} ${text.startsWith('<!DOCTYPE') ? '(התקבלה תגובת HTML)' : text}`);
+                }
+                const data = await response.json();
+                if (data.error) throw new Error(data.error);
+                const whatsappUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${data.report}`;
+                window.open(whatsappUrl, '_blank');
+            } catch (error) {
+                console.error('Morning report error:', error);
+                showError(error.message);
+            } finally {
+                showLoading(false);
+            }
         }
-        
-        // Share WhatsApp report
-        function shareWhatsAppReport() {
-            // Show loading spinner
-            document.getElementById('loadingSpinner').classList.remove('hidden');
-            
-            // Call server to generate report
-            google.script.run
-                .withSuccessHandler(function(reportText) {
-                    document.getElementById('loadingSpinner').classList.add('hidden');
-                    
-                    // Encode for WhatsApp
-                    const encodedText = encodeURIComponent(reportText);
-                    const whatsappUrl = `https://wa.me/?text=${encodedText}`;
-                    
-                    // Open WhatsApp
-                    window.open(whatsappUrl, '_blank');
-                })
-                .withFailureHandler(function(error) {
-                    document.getElementById('loadingSpinner').classList.add('hidden');
-                    showError('שגיאה ביצירת הדוח');
-                    console.error('Report error:', error);
-                })
-                .generateMorningReport();
-        }
-        
-        // Show error message
-        function showError(message) {
-            const errorDiv = document.createElement('div');
-            errorDiv.className = 'fixed bottom-20 left-1/2 transform -translate-x-1/2 bg-red-500 text-white px-4 py-2 rounded-lg shadow-lg z-50 animate-fade-in';
-            errorDiv.textContent = message;
-            
-            document.body.appendChild(errorDiv);
-            
-            // Remove after 3 seconds
-            setTimeout(() => {
-                errorDiv.classList.add('opacity-0', 'transition-opacity', 'duration-500');
-                setTimeout(() => {
-                    document.body.removeChild(errorDiv);
-                }, 500);
-            }, 3000);
-        }
-        
-        // Show notification
-        function showNotification(message) {
-            const notification = document.createElement('div');
-            notification.className = 'fixed bottom-20 left-1/2 transform -translate-x-1/2 bg-green-500 text-white px-4 py-2 rounded-lg shadow-lg z-50 animate-fade-in';
-            notification.textContent = message;
-            
-            document.body.appendChild(notification);
-            
-            // Remove after 3 seconds
-            setTimeout(() => {
-                notification.classList.add('opacity-0', 'transition-opacity', 'duration-500');
-                setTimeout(() => {
-                    document.body.removeChild(notification);
-                }, 500);
-            }, 3000);
-        }
-        
-        // Helper function to get today's date in YYYY-MM-DD format
-        function getTodayDate() {
-            const today = new Date();
-            const year = today.getFullYear();
-            const month = String(today.getMonth() + 1).padStart(2, '0');
-            const day = String(today.getDate()).padStart(2, '0');
-            return `${year}-${month}-${day}`;
-        }
+
+        // Initial load
+        console.log('Initializing app at', new Date().toLocaleTimeString('he-IL'));
+        checkHealth();
+        fetchOrders();
     </script>
 </body>
 </html>
